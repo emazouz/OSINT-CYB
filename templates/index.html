@@ -1,11 +1,996 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSINT Analyzer Ultimate (Rako)</title>
+<meta name="description" content="أداة OSINT متقدمة للبحث والتحليل الاستخباراتي">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://unpkg.com/vis-network/styles/vis-network.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #111827;
+    --bg-card: #1a1f2e;
+    --accent: #f59e0b;
+    --accent-hover: #fbbf24;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border: #2d3748;
+    --glow: rgba(245, 158, 11, 0.15);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: 'Rubik', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+.container { max-width: 1500px; }
+
+/* Header */
+.app-header {
+    background: linear-gradient(135deg, #111827 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 0;
+    text-align: center;
+}
+.app-header h2 {
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent) 0%, #fb923c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 1.8rem;
+}
+.app-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+/* Search Form */
+.search-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+.search-panel .form-control,
+.search-panel .form-select {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: 'Rubik', sans-serif;
+}
+.search-panel .form-control:focus,
+.search-panel .form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--glow);
+    outline: none;
+}
+.search-panel .input-group-text {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Rubik', sans-serif;
+}
+.btn-search {
+    background: linear-gradient(135deg, var(--accent), #f97316);
+    border: none;
+    color: #000;
+    font-weight: 600;
+    padding: 12px 28px;
+    border-radius: 10px;
+    font-family: 'Rubik', sans-serif;
+    transition: all 0.3s ease;
+}
+.btn-search:hover {
+    background: linear-gradient(135deg, var(--accent-hover), #fb923c);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(245,158,11,0.4);
+}
+.btn-search:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Progress Bar */
+.progress-container {
+    margin-top: 1rem;
+    display: none;
+}
+.progress-bar-custom {
+    height: 4px;
+    background: var(--bg-card);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #f97316, var(--accent));
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    width: 0%;
+    transition: width 0.5s ease;
+}
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+.progress-text {
+    color: var(--accent);
+    font-size: 0.85rem;
+    margin-top: 6px;
+    text-align: center;
+}
+
+/* Stats */
+.stats-bar {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+.stat-chip {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.stat-chip .count {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* Network Map */
+#resultMap {
+    border: 1px solid var(--border);
+    height: 700px;
+    margin-top: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+}
+#resultMap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(245,158,11,0.03) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 1;
+}
+.map-placeholder {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+.map-placeholder i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--border);
+}
+
+/* Results Section */
+.results-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    border-radius: 16px;
+    margin-top: 1.5rem;
+    margin-bottom: 3rem;
+}
+.results-section h4 {
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+#results {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+#results::-webkit-scrollbar { width: 6px; }
+#results::-webkit-scrollbar-track { background: var(--bg-primary); border-radius: 4px; }
+#results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+#results::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* Result Cards */
+.result-card {
+    background: var(--bg-card);
+    padding: 14px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+.result-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--glow);
+    transform: translateX(4px);
+}
+.result-card .icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+}
+.result-card .icon-wrapper img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+.result-card .info { flex: 1; min-width: 0; }
+.result-card .info .title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.result-card .info .link {
+    font-size: 0.78rem;
+    color: #60a5fa;
+    word-break: break-all;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.result-card .info .badges {
+    margin-top: 4px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.badge-platform {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.badge-category {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(148,163,184,0.15);
+    color: var(--text-secondary);
+}
+
+.result-card .btn-detail {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: 'Rubik', sans-serif;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.result-card .btn-detail:hover {
+    background: var(--accent);
+    color: #000;
+}
+
+/* Tooltip */
+.tooltip-custom {
+    position: absolute;
+    background: rgba(10,14,23,0.95);
+    backdrop-filter: blur(12px);
+    color: var(--text-primary);
+    padding: 14px 18px;
+    border-radius: 12px;
+    max-width: 380px;
+    font-size: 0.85rem;
+    display: none;
+    z-index: 1000;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    line-height: 1.6;
+}
+
+/* Filter Tabs */
+.filter-tabs {
+    display: flex;
+    gap: 8px;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+.filter-tab {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-family: 'Rubik', sans-serif;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.filter-tab:hover, .filter-tab.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+}
+.filter-tab .tab-count {
+    background: rgba(0,0,0,0.2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+}
+</style>
 </head>
 <body>
-    <h1>OSINT Search</h1>
+
+<div class="app-header">
+    <div class="container">
+        <h2><i class="fa-solid fa-satellite-dish"></i> OSINT Analyzer Ultimate</h2>
+        <div class="subtitle">أداة بحث وتحليل استخباراتي متقدمة — Open Source Intelligence</div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <form id="searchForm" class="search-panel">
+        <div class="row g-3">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input type="text" id="queryInput" class="form-control" placeholder="ادخل اسم الشخص، الشركة، أو أي استعلام ..." required>
+                    <button type="submit" class="btn-search" id="searchBtn">
+                        <i class="fa-solid fa-magnifying-glass"></i> بحث
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <label class="input-group-text" for="depthSelect"><i class="fa-solid fa-layer-group"></i> العمق</label>
+                    <select id="depthSelect" class="form-select">
+                        <option value="1">1 صفحة</option>
+                        <option value="2">2 صفحات</option>
+                        <option value="3" selected>3 صفحات</option>
+                        <option value="5">5 صفحات</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar-custom">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">جاري البحث...</div>
+        </div>
+
+        <div class="stats-bar" id="statsBar" style="display:none;"></div>
+    </form>
+
+    <div class="filter-tabs" id="filterTabs" style="display:none;"></div>
+
+    <div id="resultMap">
+        <div class="map-placeholder">
+            <i class="fa-solid fa-diagram-project"></i>
+            <span>ابدأ البحث لعرض خريطة النتائج</span>
+        </div>
+    </div>
+
+    <div class="results-section">
+        <h4><i class="fa-solid fa-list-ul"></i> النتائج</h4>
+        <div id="results">
+            <div style="text-align:center; color:var(--text-secondary); padding:2rem;">
+                <i class="fa-solid fa-inbox" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+                لم يتم إجراء بحث بعد
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="tooltip" class="tooltip-custom"></div>
+
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script>
+// ────────────────────────────────────────────────────────────────────
+//  COMPREHENSIVE ICON & COLOR MAPPING — 100% Coverage
+// ────────────────────────────────────────────────────────────────────
+
+// Platform icons: [color, favicon-domain, fontAwesomeClass]
+// Uses Google Favicon API as primary, FA icon as fallback label
+const PLATFORM_CONFIG = {
+    // ── Social Media ──
+    "Facebook":     { color: "#1877F2", domain: "facebook.com",       fa: "fa-brands fa-facebook-f" },
+    "Twitter/X":    { color: "#1DA1F2", domain: "x.com",             fa: "fa-brands fa-x-twitter" },
+    "Twitter":      { color: "#1DA1F2", domain: "x.com",             fa: "fa-brands fa-x-twitter" },
+    "Instagram":    { color: "#E4405F", domain: "instagram.com",     fa: "fa-brands fa-instagram" },
+    "YouTube":      { color: "#FF0000", domain: "youtube.com",       fa: "fa-brands fa-youtube" },
+    "TikTok":       { color: "#010101", domain: "tiktok.com",        fa: "fa-brands fa-tiktok" },
+    "Snapchat":     { color: "#FFFC00", domain: "snapchat.com",      fa: "fa-brands fa-snapchat" },
+    "Telegram":     { color: "#26A5E4", domain: "telegram.org",      fa: "fa-brands fa-telegram" },
+    "WhatsApp":     { color: "#25D366", domain: "whatsapp.com",      fa: "fa-brands fa-whatsapp" },
+    "LinkedIn":     { color: "#0A66C2", domain: "linkedin.com",      fa: "fa-brands fa-linkedin-in" },
+    "Reddit":       { color: "#FF4500", domain: "reddit.com",        fa: "fa-brands fa-reddit-alien" },
+    "Pinterest":    { color: "#E60023", domain: "pinterest.com",     fa: "fa-brands fa-pinterest-p" },
+    "Discord":      { color: "#5865F2", domain: "discord.com",       fa: "fa-brands fa-discord" },
+    "Twitch":       { color: "#9146FF", domain: "twitch.tv",         fa: "fa-brands fa-twitch" },
+    "Mastodon":     { color: "#6364FF", domain: "mastodon.social",   fa: "fa-brands fa-mastodon" },
+    "Threads":      { color: "#000000", domain: "threads.net",       fa: "fa-brands fa-threads" },
+    "Tumblr":       { color: "#36465D", domain: "tumblr.com",        fa: "fa-brands fa-tumblr" },
+    "Flickr":       { color: "#0063DC", domain: "flickr.com",        fa: "fa-brands fa-flickr" },
+    "VK":           { color: "#4680C2", domain: "vk.com",            fa: "fa-brands fa-vk" },
+    "Weibo":        { color: "#E6162D", domain: "weibo.com",         fa: "fa-brands fa-weibo" },
+
+    // ── Professional ──
+    "AngelList":    { color: "#000000", domain: "wellfound.com",     fa: "fa-brands fa-angellist" },
+    "Glassdoor":    { color: "#0CAA41", domain: "glassdoor.com",     fa: "fa-solid fa-building" },
+    "Crunchbase":   { color: "#0288D1", domain: "crunchbase.com",    fa: "fa-solid fa-chart-line" },
+    "Indeed":       { color: "#2164F3", domain: "indeed.com",        fa: "fa-solid fa-briefcase" },
+
+    // ── Developer ──
+    "GitHub":       { color: "#181717", domain: "github.com",        fa: "fa-brands fa-github" },
+    "GitLab":       { color: "#FC6D26", domain: "gitlab.com",        fa: "fa-brands fa-gitlab" },
+    "Bitbucket":    { color: "#0052CC", domain: "bitbucket.org",     fa: "fa-brands fa-bitbucket" },
+    "StackOverflow":{ color: "#F58025", domain: "stackoverflow.com", fa: "fa-brands fa-stack-overflow" },
+    "HackerNews":   { color: "#FF6600", domain: "news.ycombinator.com", fa: "fa-brands fa-hacker-news" },
+    "Dev.to":       { color: "#0A0A0A", domain: "dev.to",           fa: "fa-brands fa-dev" },
+    "CodePen":      { color: "#000000", domain: "codepen.io",        fa: "fa-brands fa-codepen" },
+    "npm":          { color: "#CB3837", domain: "npmjs.com",         fa: "fa-brands fa-npm" },
+    "PyPI":         { color: "#3775A9", domain: "pypi.org",          fa: "fa-brands fa-python" },
+    "Medium":       { color: "#000000", domain: "medium.com",        fa: "fa-brands fa-medium" },
+
+    // ── Education ──
+    "Coursera":     { color: "#0056D2", domain: "coursera.org",      fa: "fa-solid fa-graduation-cap" },
+    "edX":          { color: "#02262B", domain: "edx.org",           fa: "fa-solid fa-graduation-cap" },
+    "Udemy":        { color: "#A435F0", domain: "udemy.com",         fa: "fa-solid fa-chalkboard-user" },
+    "Khan Academy": { color: "#14BF96", domain: "khanacademy.org",   fa: "fa-solid fa-school" },
+    "Codecademy":   { color: "#1F4056", domain: "codecademy.com",    fa: "fa-solid fa-code" },
+    "Pluralsight":  { color: "#F15B2A", domain: "pluralsight.com",   fa: "fa-solid fa-play-circle" },
+    "Udacity":      { color: "#02B3E4", domain: "udacity.com",       fa: "fa-solid fa-robot" },
+    "FutureLearn":  { color: "#DE00A5", domain: "futurelearn.com",   fa: "fa-solid fa-book-open" },
+    "Skillshare":   { color: "#00FF84", domain: "skillshare.com",    fa: "fa-solid fa-palette" },
+
+    // ── News ──
+    "CNN":            { color: "#CC0000", domain: "cnn.com",           fa: "fa-solid fa-newspaper" },
+    "BBC":            { color: "#BB1919", domain: "bbc.com",           fa: "fa-solid fa-newspaper" },
+    "NYTimes":        { color: "#000000", domain: "nytimes.com",       fa: "fa-solid fa-newspaper" },
+    "The Guardian":   { color: "#052962", domain: "theguardian.com",   fa: "fa-solid fa-newspaper" },
+    "Reuters":        { color: "#FF8000", domain: "reuters.com",       fa: "fa-solid fa-newspaper" },
+    "Al Jazeera":     { color: "#D2A44B", domain: "aljazeera.com",     fa: "fa-solid fa-newspaper" },
+    "Fox News":       { color: "#003366", domain: "foxnews.com",       fa: "fa-solid fa-newspaper" },
+    "Washington Post":{ color: "#000000", domain: "washingtonpost.com",fa: "fa-solid fa-newspaper" },
+    "Bloomberg":      { color: "#472A91", domain: "bloomberg.com",     fa: "fa-solid fa-chart-bar" },
+    "TechCrunch":     { color: "#0A9E01", domain: "techcrunch.com",    fa: "fa-solid fa-microchip" },
+    "Wired":          { color: "#000000", domain: "wired.com",         fa: "fa-solid fa-bolt" },
+    "Ars Technica":   { color: "#FF4E00", domain: "arstechnica.com",   fa: "fa-solid fa-flask" },
+    "The Verge":      { color: "#E5127D", domain: "theverge.com",      fa: "fa-solid fa-podcast" },
+
+    // ── Academic ──
+    "Academic":       { color: "#4A90D9", domain: "edu",               fa: "fa-solid fa-university" },
+    "Google Scholar": { color: "#4285F4", domain: "scholar.google.com",fa: "fa-solid fa-book" },
+    "ResearchGate":   { color: "#00CCBB", domain: "researchgate.net",  fa: "fa-brands fa-researchgate" },
+    "Academia.edu":   { color: "#41454A", domain: "academia.edu",      fa: "fa-solid fa-graduation-cap" },
+
+    // ── Paste / Leak ──
+    "Pastebin":     { color: "#02456C", domain: "pastebin.com",      fa: "fa-solid fa-paste" },
+    "Ghostbin":     { color: "#2D2D2D", domain: "ghostbin.co",       fa: "fa-solid fa-ghost" },
+    "Hastebin":     { color: "#4A90D9", domain: "hastebin.com",      fa: "fa-solid fa-paste" },
+
+    // ── Forum ──
+    "Quora":        { color: "#B92B27", domain: "quora.com",         fa: "fa-brands fa-quora" },
+    "4chan":         { color: "#006600", domain: "4chan.org",          fa: "fa-solid fa-comments" },
+
+    // ── Contact ──
+    "Email":          { color: "#EA4335", domain: "gmail.com",         fa: "fa-solid fa-envelope" },
+    "Emails":         { color: "#EA4335", domain: "gmail.com",         fa: "fa-solid fa-envelope" },
+    "Phone":          { color: "#4CAF50", domain: null,                fa: "fa-solid fa-phone" },
+    "Phone Numbers":  { color: "#4CAF50", domain: null,                fa: "fa-solid fa-phone" },
+
+    // ── Files ──
+    "Document":       { color: "#4285F4", domain: null,  fa: "fa-solid fa-file-pdf" },
+    "Spreadsheet":    { color: "#0F9D58", domain: null,  fa: "fa-solid fa-file-excel" },
+    "Presentation":   { color: "#F4B400", domain: null,  fa: "fa-solid fa-file-powerpoint" },
+    "Data File":      { color: "#7B1FA2", domain: null,  fa: "fa-solid fa-database" },
+
+    // ── Government / Official ──
+    "Government":       { color: "#1B5E20", domain: null,  fa: "fa-solid fa-landmark" },
+    "Official Website": { color: "#1565C0", domain: null,  fa: "fa-solid fa-shield-halved" },
+
+    // ── Fallback ──
+    "General Website":  { color: "#60a5fa", domain: null,  fa: "fa-solid fa-globe" },
+    "Websites":         { color: "#60a5fa", domain: null,  fa: "fa-solid fa-globe" },
+    "Unknown":          { color: "#6b7280", domain: null,  fa: "fa-solid fa-circle-question" },
+};
+
+// Category colors for badges
+const CATEGORY_COLORS = {
+    "social":       { bg: "rgba(29,161,242,0.15)", text: "#60a5fa" },
+    "professional": { bg: "rgba(10,102,194,0.15)", text: "#60a5fa" },
+    "dev":          { bg: "rgba(248,128,37,0.15)", text: "#f59e0b" },
+    "education":    { bg: "rgba(20,191,150,0.15)", text: "#34d399" },
+    "news":         { bg: "rgba(204,0,0,0.15)",    text: "#f87171" },
+    "government":   { bg: "rgba(27,94,32,0.15)",   text: "#4ade80" },
+    "academic":     { bg: "rgba(74,144,217,0.15)",  text: "#93c5fd" },
+    "paste_leak":   { bg: "rgba(2,69,108,0.15)",    text: "#67e8f9" },
+    "forum":        { bg: "rgba(255,69,0,0.15)",    text: "#fb923c" },
+    "contact":      { bg: "rgba(234,67,53,0.15)",   text: "#fca5a5" },
+    "file":         { bg: "rgba(66,133,244,0.15)",  text: "#93c5fd" },
+    "official":     { bg: "rgba(21,101,192,0.15)",  text: "#60a5fa" },
+    "website":      { bg: "rgba(96,165,250,0.10)",  text: "#94a3b8" },
+};
+
+// ────────────────────────────────────────────────────────────────────
+//  ICON GENERATION — Canvas-based for 100% reliability
+// ────────────────────────────────────────────────────────────────────
+
+// Cache generated icon URLs
+const iconCache = {};
+
+/**
+ * Generate a reliable icon using Google Favicon API, with canvas fallback.
+ * Returns a data URL that vis.js can always render.
+ */
+function getIconUrl(platform) {
+    if (iconCache[platform]) return iconCache[platform];
+
+    const config = PLATFORM_CONFIG[platform] || PLATFORM_CONFIG["General Website"];
+    
+    // If we have a domain, use Google's Favicon API
+    if (config.domain) {
+        const url = `https://www.google.com/s2/favicons?domain=${config.domain}&sz=64`;
+        iconCache[platform] = url;
+        return url;
+    }
+    
+    // Otherwise, generate a canvas icon with the platform initial
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw colored circle
+    ctx.beginPath();
+    ctx.arc(32, 32, 30, 0, Math.PI * 2);
+    ctx.fillStyle = config.color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Draw text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px Rubik, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const initial = platform.charAt(0).toUpperCase();
+    ctx.fillText(initial, 32, 33);
+    
+    const dataUrl = canvas.toDataURL('image/png');
+    iconCache[platform] = dataUrl;
+    return dataUrl;
+}
+
+/**
+ * Preload all icons by creating Image objects.
+ * This ensures vis.js has the images ready.
+ */
+function preloadIcons(platforms) {
+    const promises = platforms.map(p => {
+        return new Promise((resolve) => {
+            const url = getIconUrl(p);
+            if (url.startsWith('data:')) {
+                resolve();
+                return;
+            }
+            const img = new Image();
+            img.onload = resolve;
+            img.onerror = () => {
+                // Fallback to canvas if favicon fails
+                const config = PLATFORM_CONFIG[p] || PLATFORM_CONFIG["General Website"];
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.beginPath();
+                ctx.arc(32, 32, 30, 0, Math.PI * 2);
+                ctx.fillStyle = config.color;
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 24px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(p.charAt(0), 32, 33);
+                iconCache[p] = canvas.toDataURL('image/png');
+                resolve();
+            };
+            img.src = url;
+        });
+    });
+    return Promise.all(promises);
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  APPLICATION LOGIC
+// ────────────────────────────────────────────────────────────────────
+
+const tooltip = document.getElementById("tooltip");
+let currentResults = [];
+let currentFilter = "all";
+
+document.getElementById("searchForm").onsubmit = async function(e) {
+    e.preventDefault();
+    const query = document.getElementById("queryInput").value.trim();
+    if (!query) return;
+
+    const btn = document.getElementById("searchBtn");
+    const progress = document.getElementById("progressContainer");
+    const progressFill = document.getElementById("progressFill");
+    const progressText = document.getElementById("progressText");
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري البحث...';
+    progress.style.display = "block";
+    progressFill.style.width = "30%";
+    progressText.textContent = "🔍 جاري البحث...";
+
+    try {
+        let form = new FormData();
+        form.append("query", query);
+        form.append("depth", document.getElementById("depthSelect").value);
+
+        progressFill.style.width = "60%";
+        const res = await fetch("/search", { method: "POST", body: form });
+        const data = await res.json();
+
+        progressFill.style.width = "90%";
+        progressText.textContent = "📊 جاري تحليل النتائج...";
+
+        // Normalize data — support both old format (type) and new format (platform/category)
+        currentResults = (data || []).map(r => {
+            return {
+                title: r.title || "بدون عنوان",
+                link: r.link || "#",
+                snippet: r.snippet || "",
+                source: r.source || "",
+                image: r.image || null,
+                // Support both old and new API format
+                platform: r.platform || r.type || "General Website",
+                category: r.category || "website",
+            };
+        });
+
+        // Preload icons for all unique platforms
+        const uniquePlatforms = [...new Set(currentResults.map(r => r.platform))];
+        await preloadIcons(uniquePlatforms);
+
+        progressFill.style.width = "100%";
+        progressText.textContent = `✅ تم العثور على ${currentResults.length} نتيجة`;
+
+        renderStats(currentResults);
+        renderFilterTabs(currentResults);
+        renderResults(currentResults);
+        renderGraph(currentResults, query);
+    } catch (err) {
+        progressText.textContent = "❌ حدث خطأ أثناء البحث";
+        console.error(err);
+        document.getElementById("results").innerHTML =
+            `<div style="text-align:center;color:#f87171;padding:2rem;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem;display:block;margin-bottom:0.5rem;"></i>
+                حدث خطأ أثناء البحث. تأكد من تشغيل السيرفر.
+            </div>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> بحث';
+        setTimeout(() => { progress.style.display = "none"; }, 3000);
+    }
+};
+
+// ── Stats ──
+function renderStats(data) {
+    const bar = document.getElementById("statsBar");
+    bar.style.display = "flex";
+    
+    const categories = {};
+    data.forEach(r => {
+        categories[r.category] = (categories[r.category] || 0) + 1;
+    });
+    
+    bar.innerHTML = `
+        <div class="stat-chip"><i class="fa-solid fa-chart-pie"></i> إجمالي: <span class="count">${data.length}</span></div>
+        ${Object.entries(categories).map(([cat, count]) => 
+            `<div class="stat-chip"><span class="count">${count}</span> ${cat}</div>`
+        ).join('')}
+    `;
+}
+
+// ── Filter Tabs ──
+function renderFilterTabs(data) {
+    const container = document.getElementById("filterTabs");
+    container.style.display = "flex";
+    
+    const platforms = {};
+    data.forEach(r => {
+        platforms[r.platform] = (platforms[r.platform] || 0) + 1;
+    });
+
+    let html = `<button class="filter-tab active" data-filter="all" onclick="filterResults('all', this)">
+        <i class="fa-solid fa-border-all"></i> الكل <span class="tab-count">${data.length}</span>
+    </button>`;
+    
+    // Sort by count
+    const sorted = Object.entries(platforms).sort((a, b) => b[1] - a[1]);
+    for (const [platform, count] of sorted) {
+        const config = PLATFORM_CONFIG[platform] || PLATFORM_CONFIG["General Website"];
+        html += `<button class="filter-tab" data-filter="${platform}" onclick="filterResults('${platform.replace(/'/g, "\\'")}', this)">
+            <i class="${config.fa}"></i> ${platform} <span class="tab-count">${count}</span>
+        </button>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+function filterResults(platform, btn) {
+    // Update active tab
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    
+    currentFilter = platform;
+    const filtered = platform === "all" 
+        ? currentResults 
+        : currentResults.filter(r => r.platform === platform);
+    renderResults(filtered);
+}
+
+// ── Render Results ──
+function renderResults(data) {
+    const container = document.getElementById("results");
+    container.innerHTML = "";
+
+    if (!data || data.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; color:var(--text-secondary); padding:2rem;">
+                <i class="fa-solid fa-face-meh" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+                لا توجد نتائج
+            </div>`;
+        return;
+    }
+
+    data.forEach(result => {
+        const config = PLATFORM_CONFIG[result.platform] || PLATFORM_CONFIG["General Website"];
+        const catColor = CATEGORY_COLORS[result.category] || CATEGORY_COLORS["website"];
+        const iconUrl = getIconUrl(result.platform);
+
+        const card = document.createElement("div");
+        card.className = "result-card";
+        card.innerHTML = `
+            <div class="icon-wrapper" style="border-color:${config.color}40;">
+                <img src="${iconUrl}" alt="${result.platform}" 
+                     onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'${config.fa}\\' style=\\'font-size:1.4rem; color:${config.color}\\'></i>';">
+            </div>
+            <div class="info">
+                <div class="title">${escapeHtml(result.title)}</div>
+                <div class="link">${escapeHtml(result.link)}</div>
+                <div class="badges">
+                    <span class="badge-platform" style="background:${config.color}22; color:${config.color};">
+                        <i class="${config.fa}" style="font-size:0.65rem;"></i> ${result.platform}
+                    </span>
+                    <span class="badge-category" style="background:${catColor.bg}; color:${catColor.text};">
+                        ${result.category}
+                    </span>
+                    ${result.source ? `<span class="badge-category">${result.source}</span>` : ''}
+                </div>
+            </div>
+            <a href="${escapeHtml(result.link)}" target="_blank" rel="noopener noreferrer" class="btn-detail">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> فتح
+            </a>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// ── Render Graph ──
+async function renderGraph(data, queryName) {
+    const mapContainer = document.getElementById("resultMap");
+    
+    if (!data || data.length === 0) {
+        mapContainer.innerHTML = `
+            <div class="map-placeholder">
+                <i class="fa-solid fa-diagram-project"></i>
+                <span>لا توجد نتائج لرسم الخريطة</span>
+            </div>`;
+        return;
+    }
+
+    // Group by platform
+    const typeGroups = {};
+    data.forEach(r => {
+        if (!typeGroups[r.platform]) typeGroups[r.platform] = [];
+        typeGroups[r.platform].push(r);
+    });
+
+    let nodes = [], edges = [], nid = 2;
+
+    // Central node
+    nodes.push({
+        id: 1,
+        label: queryName,
+        shape: "box",
+        color: {
+            background: "#f59e0b",
+            border: "#f97316",
+            highlight: { background: "#fbbf24", border: "#f59e0b" }
+        },
+        font: { color: "#000", size: 18, face: "Rubik" },
+        borderWidth: 2,
+        shadow: { enabled: true, color: "rgba(245,158,11,0.5)", size: 20 },
+        title: `🔍 ${queryName}`
+    });
+
+    for (const platform in typeGroups) {
+        const typeId = nid++;
+        const config = PLATFORM_CONFIG[platform] || PLATFORM_CONFIG["General Website"];
+        const iconUrl = getIconUrl(platform);
+
+        // Platform group node
+        nodes.push({
+            id: typeId,
+            label: `${platform} (${typeGroups[platform].length})`,
+            shape: "circularImage",
+            image: iconUrl,
+            size: 30,
+            color: {
+                border: config.color,
+                highlight: { border: config.color }
+            },
+            borderWidth: 3,
+            font: { color: "#fff", size: 14, face: "Rubik" },
+            title: `📂 ${platform}\nعدد النتائج: ${typeGroups[platform].length}`,
+            brokenImage: getIconUrl("General Website"),
+        });
+        
+        edges.push({
+            from: 1,
+            to: typeId,
+            arrows: { to: { enabled: true, scaleFactor: 1.5 } },
+            smooth: { type: "cubicBezier" },
+            length: 350,
+            color: { color: config.color + "80", highlight: config.color },
+            width: 2,
+        });
+
+        // Individual result nodes
+        typeGroups[platform].forEach(result => {
+            const id = nid++;
+            const resultIcon = result.image || iconUrl;
+            
+            nodes.push({
+                id,
+                label: result.title.length > 30 ? result.title.substring(0, 30) + "..." : result.title,
+                shape: "circularImage",
+                image: resultIcon,
+                size: 20,
+                color: {
+                    border: config.color + "80",
+                    highlight: { border: config.color }
+                },
+                borderWidth: 2,
+                font: { color: "#ccc", size: 11, face: "Rubik" },
+                title: `${result.title}\n🔗 ${result.link}\n📂 ${result.platform}`,
+                brokenImage: iconUrl,
+                url: result.link,
+            });
+            
+            edges.push({
+                from: typeId,
+                to: id,
+                arrows: { to: { enabled: true, scaleFactor: 0.8 } },
+                dashes: [5, 5],
+                smooth: { type: "cubicBezier" },
+                length: 200,
+                color: { color: config.color + "40", highlight: config.color + "80" },
+                width: 1,
+            });
+        });
+    }
+
+    // Clear container
+    mapContainer.innerHTML = "";
+    
+    const network = new vis.Network(mapContainer, {
+        nodes: new vis.DataSet(nodes),
+        edges: new vis.DataSet(edges)
+    }, {
+        physics: {
+            enabled: true,
+            barnesHut: {
+                gravitationalConstant: -10000,
+                centralGravity: 0.3,
+                springLength: 300,
+                springConstant: 0.04,
+                damping: 0.09,
+                avoidOverlap: 0.5
+            },
+            stabilization: { iterations: 150 }
+        },
+        interaction: {
+            hover: true,
+            zoomView: true,
+            dragView: true,
+            tooltipDelay: 200,
+        },
+        nodes: {
+            shadow: {
+                enabled: true,
+                color: "rgba(0,0,0,0.3)",
+                size: 10
+            }
+        }
+    });
+
+    // Tooltip on hover
+    network.on("hoverNode", function(params) {
+        const node = network.body.data.nodes.get(params.node);
+        if (node && node.title) {
+            tooltip.innerHTML = node.title.replace(/\n/g, "<br>");
+            tooltip.style.display = "block";
+            tooltip.style.left = (params.event.pageX + 15) + "px";
+            tooltip.style.top = (params.event.pageY + 15) + "px";
+        }
+    });
+    network.on("blurNode", () => tooltip.style.display = "none");
+    
+    // Open URL on double-click
+    network.on("doubleClick", function(params) {
+        if (params.nodes.length > 0) {
+            const node = network.body.data.nodes.get(params.nodes[0]);
+            if (node && node.url) {
+                window.open(node.url, "_blank");
+            }
+        }
+    });
+}
+
+// ── Utility ──
+function escapeHtml(str) {
+    if (!str) return "";
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+}
+</script>
 </body>
 </html>
