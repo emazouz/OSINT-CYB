@@ -3,115 +3,686 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OSINT Analyzer Ultimate (Rako)</title>
-<meta name="description" content="أداة OSINT متقدمة للبحث والتحليل الاستخباراتي">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css">
+<title>OSINT Analyzer Ultimate</title>
+<meta name="description" content="أداة OSINT متقدمة للبحث والتحليل الاستخباراتي — Open Source Intelligence">
 <link rel="stylesheet" href="https://unpkg.com/vis-network/styles/vis-network.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM — Premium Dark Glassmorphism
+   ═══════════════════════════════════════════════════════════════ */
 :root {
-    --bg-primary: #0a0e17;
+    --bg-deep: #06080f;
+    --bg-primary: #0b0f1a;
     --bg-secondary: #111827;
-    --bg-card: #1a1f2e;
+    --bg-card: rgba(17, 24, 39, 0.6);
+    --bg-glass: rgba(17, 24, 39, 0.45);
+    --bg-glass-hover: rgba(17, 24, 39, 0.65);
     --accent: #f59e0b;
     --accent-hover: #fbbf24;
+    --accent-glow: rgba(245, 158, 11, 0.25);
+    --accent-soft: rgba(245, 158, 11, 0.08);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.15);
+    --emerald: #34d399;
+    --emerald-glow: rgba(52, 211, 153, 0.15);
+    --rose: #fb7185;
+    --rose-glow: rgba(251, 113, 133, 0.15);
+    --violet: #a78bfa;
+    --violet-glow: rgba(167, 139, 250, 0.15);
     --text-primary: #f1f5f9;
     --text-secondary: #94a3b8;
-    --border: #2d3748;
-    --glow: rgba(245, 158, 11, 0.15);
+    --text-muted: #64748b;
+    --border: rgba(148, 163, 184, 0.08);
+    --border-hover: rgba(148, 163, 184, 0.18);
+    --glass-blur: 20px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --sidebar-width: 280px;
+    --sidebar-collapsed: 68px;
+    --header-height: 64px;
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-* { margin:0; padding:0; box-sizing:border-box; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
 body {
-    font-family: 'Rubik', sans-serif;
-    background: var(--bg-primary);
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-deep);
     color: var(--text-primary);
     min-height: 100vh;
+    overflow-x: hidden;
 }
-.container { max-width: 1500px; }
 
-/* Header */
-.app-header {
-    background: linear-gradient(135deg, #111827 0%, #0f172a 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 1rem 0;
-    text-align: center;
+/* Animated gradient background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 20%, rgba(245,158,11,0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(34,211,238,0.03) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 50% at 50% 50%, rgba(167,139,250,0.02) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
 }
-.app-header h2 {
+
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+    50% { box-shadow: 0 0 20px 4px var(--accent-glow); }
+}
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+.fade-in { animation: fadeIn 0.5s ease both; }
+.fade-in-up { animation: fadeInUp 0.6s ease both; }
+.slide-in-right { animation: slideInRight 0.5s ease both; }
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT — Sidebar + Main Content
+   ═══════════════════════════════════════════════════════════════ */
+
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--bg-glass);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+.sidebar-brand {
+    padding: 1.2rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.sidebar-brand .brand-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent), #f97316);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: #000;
+    flex-shrink: 0;
+    box-shadow: 0 4px 16px var(--accent-glow);
+}
+.sidebar-brand .brand-text {
+    display: flex;
+    flex-direction: column;
+}
+.sidebar-brand .brand-name {
     font-weight: 700;
-    background: linear-gradient(135deg, var(--accent) 0%, #fb923c 100%);
+    font-size: 1rem;
+    background: linear-gradient(135deg, var(--accent), #fb923c);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-size: 1.8rem;
 }
-.app-header .subtitle {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    margin-top: 4px;
+.sidebar-brand .brand-sub {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
-/* Search Form */
-.search-panel {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-top: 1.5rem;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+.sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.8rem 0;
 }
-.search-panel .form-control,
-.search-panel .form-select {
-    background: var(--bg-card);
+.nav-section-label {
+    padding: 0.6rem 1.4rem;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 1.4rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: var(--transition);
+    border-radius: 0;
+    position: relative;
+}
+.nav-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: var(--accent);
+    border-radius: 0 4px 4px 0;
+    transition: var(--transition);
+}
+.nav-item:hover {
     color: var(--text-primary);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 16px;
-    font-family: 'Rubik', sans-serif;
+    background: var(--accent-soft);
 }
-.search-panel .form-control:focus,
-.search-panel .form-select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--glow);
+.nav-item:hover::before { height: 60%; }
+.nav-item.active {
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+.nav-item.active::before { height: 60%; }
+.nav-item .nav-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    transition: var(--transition);
+}
+.nav-item:hover .nav-icon,
+.nav-item.active .nav-icon {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.sidebar-footer {
+    padding: 1rem 1.4rem;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.sidebar-footer .version {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* ═══ MOBILE SIDEBAR TOGGLE ═══ */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 200;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    font-size: 1.2rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+.sidebar-toggle:hover { background: var(--accent-soft); }
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 90;
+}
+
+/* ═══ MAIN CONTENT ═══ */
+.main-content {
+    flex: 1;
+    margin-right: var(--sidebar-width);
+    min-height: 100vh;
+    padding: 2rem;
+    transition: var(--transition);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLASS CARD SYSTEM
+   ═══════════════════════════════════════════════════════════════ */
+.glass-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    transition: var(--transition);
+}
+.glass-card:hover {
+    border-color: var(--border-hover);
+}
+.glass-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+.glass-card-header .header-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.glass-card-header h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+}
+.glass-card-header .subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* ═══ TOOL PANELS ═══ */
+.tool-panel {
+    display: none;
+    animation: fadeInUp 0.4s ease both;
+}
+.tool-panel.active { display: block; }
+
+/* ═══ FORM ELEMENTS ═══ */
+.form-group {
+    margin-bottom: 1rem;
+}
+.form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+}
+.form-input {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    transition: var(--transition);
     outline: none;
 }
-.search-panel .input-group-text {
-    background: var(--bg-card);
-    color: var(--text-secondary);
+.form-input::placeholder { color: var(--text-muted); }
+.form-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.form-select {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.6);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    font-family: 'Rubik', sans-serif;
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    transition: var(--transition);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 14px center;
 }
-.btn-search {
-    background: linear-gradient(135deg, var(--accent), #f97316);
-    border: none;
-    color: #000;
+.form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+/* ═══ BUTTONS ═══ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 24px;
+    border-radius: var(--radius-md);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
     font-weight: 600;
-    padding: 12px 28px;
-    border-radius: 10px;
-    font-family: 'Rubik', sans-serif;
-    transition: all 0.3s ease;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    outline: none;
+    white-space: nowrap;
 }
-.btn-search:hover {
-    background: linear-gradient(135deg, var(--accent-hover), #fb923c);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(245,158,11,0.4);
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent), #f97316);
+    color: #000;
+    box-shadow: 0 4px 16px var(--accent-glow);
 }
-.btn-search:disabled {
-    opacity: 0.6;
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--accent-glow);
+}
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
     transform: none;
 }
+.btn-secondary {
+    background: rgba(148, 163, 184, 0.08);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+    background: rgba(148, 163, 184, 0.15);
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+}
+.btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    padding: 8px 12px;
+}
+.btn-ghost:hover { color: var(--accent); }
 
-/* Progress Bar */
-.progress-container {
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(148, 163, 184, 0.06);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.btn-icon:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+/* ═══ LOADING SPINNER ═══ */
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+}
+.loading-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(6, 8, 15, 0.7);
+    backdrop-filter: blur(4px);
+    border-radius: var(--radius-xl);
+    z-index: 10;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+}
+.loading-overlay.active { display: flex; }
+.loading-overlay .spinner { width: 32px; height: 32px; }
+.loading-overlay span { color: var(--accent); font-size: 0.85rem; font-weight: 500; }
+
+/* ═══ BADGES ═══ */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+.badge-amber { background: rgba(245,158,11,0.12); color: var(--accent); }
+.badge-cyan { background: var(--cyan-glow); color: var(--cyan); }
+.badge-emerald { background: var(--emerald-glow); color: var(--emerald); }
+.badge-rose { background: var(--rose-glow); color: var(--rose); }
+.badge-violet { background: var(--violet-glow); color: var(--violet); }
+.badge-muted { background: rgba(148,163,184,0.08); color: var(--text-muted); }
+
+/* ═══ GRADE BADGE ═══ */
+.grade-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+.grade-A { background: var(--emerald-glow); color: var(--emerald); border: 2px solid rgba(52,211,153,0.3); }
+.grade-B { background: rgba(34,211,238,0.1); color: var(--cyan); border: 2px solid rgba(34,211,238,0.3); }
+.grade-C { background: rgba(245,158,11,0.1); color: var(--accent); border: 2px solid rgba(245,158,11,0.3); }
+.grade-D { background: rgba(251,146,60,0.1); color: #fb923c; border: 2px solid rgba(251,146,60,0.3); }
+.grade-F { background: var(--rose-glow); color: var(--rose); border: 2px solid rgba(251,113,133,0.3); }
+
+/* ═══ RESULTS TABLE ═══ */
+.results-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.82rem;
+}
+.results-table thead th {
+    background: rgba(15,23,42,0.5);
+    padding: 10px 14px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.results-table thead th:first-child { border-radius: 0 var(--radius-sm) 0 0; }
+.results-table thead th:last-child { border-radius: var(--radius-sm) 0 0 0; }
+.results-table tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    vertical-align: top;
+}
+.results-table tbody tr:hover td {
+    background: rgba(245,158,11,0.03);
+}
+.results-table tbody tr:last-child td { border-bottom: none; }
+
+/* ═══ DATA GRID (for Username/Tech) ═══ */
+.data-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+}
+.data-grid-item {
+    background: rgba(15,23,42,0.4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    transition: var(--transition);
+}
+.data-grid-item:hover {
+    border-color: var(--border-hover);
+    background: rgba(15,23,42,0.6);
+}
+.data-grid-item .item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.data-grid-item .item-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+.data-grid-item .item-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.data-grid-item.found { border-color: rgba(52,211,153,0.3); }
+.data-grid-item.found .item-title { color: var(--emerald); }
+.data-grid-item.not-found { opacity: 0.5; }
+
+/* ═══ EMPTY STATE ═══ */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+}
+.empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+    opacity: 0.4;
+}
+.empty-state p { font-size: 0.9rem; }
+
+/* ═══ RESULT OUTPUT AREA ═══ */
+.result-output {
+    position: relative;
     margin-top: 1rem;
+    min-height: 80px;
+    max-height: 600px;
+    overflow-y: auto;
+    border-radius: var(--radius-md);
+    background: rgba(6,8,15,0.4);
+    border: 1px solid var(--border);
+    padding: 1rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SEARCH PANEL — Enhanced
+   ═══════════════════════════════════════════════════════════════ */
+.search-hero {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-top: 1rem;
+}
+.search-hero h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), #fb923c, var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+.search-hero p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.search-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+.search-input-group .form-input {
+    flex: 1;
+    padding: 14px 20px;
+    font-size: 1rem;
+    border-radius: var(--radius-lg);
+}
+.search-input-group .btn-primary {
+    padding: 14px 28px;
+    border-radius: var(--radius-lg);
+    font-size: 0.95rem;
+}
+.search-options {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ═══ PROGRESS BAR ═══ */
+.progress-container {
+    margin-top: 1.2rem;
     display: none;
 }
-.progress-bar-custom {
+.progress-bar-track {
     height: 4px;
-    background: var(--bg-card);
+    background: rgba(148,163,184,0.08);
     border-radius: 4px;
     overflow: hidden;
 }
@@ -122,31 +693,31 @@ body {
     animation: shimmer 1.5s infinite;
     width: 0%;
     transition: width 0.5s ease;
-}
-@keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    border-radius: 4px;
 }
 .progress-text {
     color: var(--accent);
-    font-size: 0.85rem;
-    margin-top: 6px;
+    font-size: 0.8rem;
+    margin-top: 8px;
     text-align: center;
+    font-weight: 500;
 }
 
-/* Stats */
+/* ═══ STATS BAR ═══ */
 .stats-bar {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
+    display: none;
+    gap: 10px;
+    margin-top: 1.2rem;
     flex-wrap: wrap;
+    justify-content: center;
 }
+.stats-bar.visible { display: flex; }
 .stat-chip {
-    background: var(--bg-card);
+    background: rgba(15,23,42,0.5);
     border: 1px solid var(--border);
     padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.78rem;
     color: var(--text-secondary);
     display: flex;
     align-items: center;
@@ -157,191 +728,26 @@ body {
     font-weight: 700;
 }
 
-/* Network Map */
-#resultMap {
-    border: 1px solid var(--border);
-    height: 700px;
-    margin-top: 1.5rem;
-    background: var(--bg-secondary);
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-    position: relative;
-    overflow: hidden;
-}
-#resultMap::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle at 50% 50%, rgba(245,158,11,0.03) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 1;
-}
-.map-placeholder {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
-    font-size: 1.1rem;
-}
-.map-placeholder i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    color: var(--border);
-}
-
-/* Results Section */
-.results-section {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    padding: 1.5rem;
-    border-radius: 16px;
-    margin-top: 1.5rem;
-    margin-bottom: 3rem;
-}
-.results-section h4 {
-    color: var(--accent);
-    font-weight: 600;
-    margin-bottom: 1rem;
-    font-size: 1.1rem;
-}
-#results {
-    max-height: 400px;
-    overflow-y: auto;
-    padding-right: 8px;
-}
-#results::-webkit-scrollbar { width: 6px; }
-#results::-webkit-scrollbar-track { background: var(--bg-primary); border-radius: 4px; }
-#results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-#results::-webkit-scrollbar-thumb:hover { background: var(--accent); }
-
-/* Result Cards */
-.result-card {
-    background: var(--bg-card);
-    padding: 14px;
-    margin-bottom: 10px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    border: 1px solid var(--border);
-    transition: all 0.2s ease;
-}
-.result-card:hover {
-    border-color: var(--accent);
-    box-shadow: 0 0 12px var(--glow);
-    transform: translateX(4px);
-}
-.result-card .icon-wrapper {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    overflow: hidden;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-}
-.result-card .icon-wrapper img {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-}
-.result-card .info { flex: 1; min-width: 0; }
-.result-card .info .title {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.95rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.result-card .info .link {
-    font-size: 0.78rem;
-    color: #60a5fa;
-    word-break: break-all;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-.result-card .info .badges {
-    margin-top: 4px;
-    display: flex;
+/* ═══ FILTER TABS ═══ */
+.filter-tabs {
+    display: none;
     gap: 6px;
     flex-wrap: wrap;
-}
-.badge-platform {
-    font-size: 0.72rem;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-.badge-category {
-    font-size: 0.72rem;
-    padding: 2px 8px;
-    border-radius: 6px;
-    background: rgba(148,163,184,0.15);
-    color: var(--text-secondary);
-}
-
-.result-card .btn-detail {
-    background: transparent;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    padding: 6px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-family: 'Rubik', sans-serif;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-.result-card .btn-detail:hover {
-    background: var(--accent);
-    color: #000;
-}
-
-/* Tooltip */
-.tooltip-custom {
-    position: absolute;
-    background: rgba(10,14,23,0.95);
-    backdrop-filter: blur(12px);
-    color: var(--text-primary);
-    padding: 14px 18px;
-    border-radius: 12px;
-    max-width: 380px;
-    font-size: 0.85rem;
-    display: none;
-    z-index: 1000;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    border: 1px solid var(--border);
-    line-height: 1.6;
-}
-
-/* Filter Tabs */
-.filter-tabs {
-    display: flex;
-    gap: 8px;
     margin-top: 1rem;
-    flex-wrap: wrap;
+    justify-content: center;
 }
+.filter-tabs.visible { display: flex; }
 .filter-tab {
     padding: 6px 14px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     cursor: pointer;
-    font-size: 0.82rem;
-    font-family: 'Rubik', sans-serif;
-    transition: all 0.2s;
+    font-size: 0.78rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    transition: var(--transition);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -352,88 +758,707 @@ body {
     border-color: var(--accent);
 }
 .filter-tab .tab-count {
-    background: rgba(0,0,0,0.2);
+    background: rgba(0,0,0,0.15);
     padding: 1px 6px;
     border-radius: 4px;
+    font-size: 0.68rem;
+}
+
+/* ═══ NETWORK MAP ═══ */
+#resultMap {
+    border: 1px solid var(--border);
+    height: 550px;
+    margin-top: 1.5rem;
+    background: rgba(11,15,26,0.6);
+    border-radius: var(--radius-xl);
+    position: relative;
+    overflow: hidden;
+}
+#resultMap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(245,158,11,0.03) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 1;
+}
+.map-placeholder {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    gap: 8px;
+}
+.map-placeholder i { font-size: 2.5rem; opacity: 0.3; }
+
+/* ═══ RESULT CARDS (Search) ═══ */
+.results-list { margin-top: 1.5rem; }
+.results-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+.results-list-header h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.results-scroll {
+    max-height: 500px;
+    overflow-y: auto;
+    padding-left: 4px;
+}
+
+.result-card {
+    background: rgba(15,23,42,0.4);
+    padding: 14px;
+    margin-bottom: 8px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+    animation: fadeInUp 0.3s ease both;
+}
+.result-card:hover {
+    border-color: rgba(245,158,11,0.2);
+    background: rgba(15,23,42,0.6);
+    transform: translateX(4px);
+}
+.result-card .icon-wrapper {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: rgba(15,23,42,0.6);
+    border: 1px solid var(--border);
+}
+.result-card .icon-wrapper img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+.result-card .info { flex: 1; min-width: 0; }
+.result-card .info .title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.result-card .info .link {
+    font-size: 0.75rem;
+    color: #60a5fa;
+    word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.result-card .info .badges {
+    margin-top: 4px;
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.result-card .btn-open {
+    background: transparent;
+    border: 1px solid rgba(245,158,11,0.2);
+    color: var(--accent);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+.result-card .btn-open:hover {
+    background: var(--accent);
+    color: #000;
+}
+
+/* ═══ TOOLTIP ═══ */
+.tooltip-custom {
+    position: absolute;
+    background: rgba(10,14,23,0.95);
+    backdrop-filter: blur(12px);
+    color: var(--text-primary);
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    max-width: 360px;
+    font-size: 0.82rem;
+    display: none;
+    z-index: 1000;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    line-height: 1.6;
+}
+
+/* ═══ KV ROW (Key-Value pairs) ═══ */
+.kv-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.kv-item {
+    background: rgba(15,23,42,0.3);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+.kv-item .kv-label {
     font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+.kv-item .kv-value {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    word-break: break-all;
+}
+
+/* ═══ FULL SCAN PROGRESS ═══ */
+.scan-module-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(15,23,42,0.3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+}
+.scan-module-status .module-name { flex: 1; font-weight: 500; }
+.scan-module-status .status-icon { font-size: 0.85rem; }
+.scan-module-status.success .status-icon { color: var(--emerald); }
+.scan-module-status.error .status-icon { color: var(--rose); }
+.scan-module-status.pending .status-icon { color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(100%);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-toggle { display: flex; }
+    .sidebar-overlay.open { display: block; }
+    .main-content {
+        margin-right: 0;
+        padding: 1.2rem;
+        padding-top: 70px;
+    }
+    .search-hero h1 { font-size: 1.5rem; }
+    .kv-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .search-input-group { flex-direction: column; }
+}
+@media (max-width: 640px) {
+    .main-content { padding: 0.8rem; padding-top: 65px; }
+    .glass-card { padding: 1rem; }
+    .data-grid { grid-template-columns: 1fr; }
+    .search-hero h1 { font-size: 1.3rem; }
+    #resultMap { height: 350px; }
+}
+
+/* ═══ PLATFORM CONFIG (used by JS) ═══ */
+.badge-platform {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 </style>
 </head>
 <body>
 
-<div class="app-header">
-    <div class="container">
-        <h2><i class="fa-solid fa-satellite-dish"></i> OSINT Analyzer Ultimate</h2>
-        <div class="subtitle">أداة بحث وتحليل استخباراتي متقدمة — Open Source Intelligence</div>
-    </div>
-</div>
+<!-- ═══ SIDEBAR TOGGLE (Mobile) ═══ -->
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+    <i class="fa-solid fa-bars"></i>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-<div class="container mt-4">
-    <form id="searchForm" class="search-panel">
-        <div class="row g-3">
-            <div class="col-md-8">
-                <div class="input-group">
-                    <input type="text" id="queryInput" class="form-control" placeholder="ادخل اسم الشخص، الشركة، أو أي استعلام ..." required>
-                    <button type="submit" class="btn-search" id="searchBtn">
-                        <i class="fa-solid fa-magnifying-glass"></i> بحث
-                    </button>
+<!-- ═══ APP LAYOUT ═══ -->
+<div class="app-layout">
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+            <div class="brand-text">
+                <span class="brand-name">OSINT Analyzer</span>
+                <span class="brand-sub">Intelligence Platform</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">البحث الرئيسي</div>
+            <div class="nav-item active" data-panel="panel-search" onclick="switchPanel('panel-search', this)">
+                <span class="nav-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <span>بحث OSINT</span>
+            </div>
+            <div class="nav-item" data-panel="panel-fullscan" onclick="switchPanel('panel-fullscan', this)">
+                <span class="nav-icon"><i class="fa-solid fa-radar"></i></span>
+                <span>فحص شامل</span>
+            </div>
+
+            <div class="nav-section-label">أدوات الشبكة</div>
+            <div class="nav-item" data-panel="panel-dns" onclick="switchPanel('panel-dns', this)">
+                <span class="nav-icon"><i class="fa-solid fa-globe"></i></span>
+                <span>DNS Enumeration</span>
+            </div>
+            <div class="nav-item" data-panel="panel-whois" onclick="switchPanel('panel-whois', this)">
+                <span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span>
+                <span>WHOIS Lookup</span>
+            </div>
+            <div class="nav-item" data-panel="panel-ssl" onclick="switchPanel('panel-ssl', this)">
+                <span class="nav-icon"><i class="fa-solid fa-lock"></i></span>
+                <span>SSL Inspector</span>
+            </div>
+            <div class="nav-item" data-panel="panel-ports" onclick="switchPanel('panel-ports', this)">
+                <span class="nav-icon"><i class="fa-solid fa-plug"></i></span>
+                <span>Port Scanner</span>
+            </div>
+            <div class="nav-item" data-panel="panel-subdomains" onclick="switchPanel('panel-subdomains', this)">
+                <span class="nav-icon"><i class="fa-solid fa-sitemap"></i></span>
+                <span>Subdomain Finder</span>
+            </div>
+            <div class="nav-item" data-panel="panel-tech" onclick="switchPanel('panel-tech', this)">
+                <span class="nav-icon"><i class="fa-solid fa-microchip"></i></span>
+                <span>Tech Detector</span>
+            </div>
+            <div class="nav-item" data-panel="panel-headers" onclick="switchPanel('panel-headers', this)">
+                <span class="nav-icon"><i class="fa-solid fa-shield-halved"></i></span>
+                <span>HTTP Headers</span>
+            </div>
+
+            <div class="nav-section-label">أدوات الاستخبارات</div>
+            <div class="nav-item" data-panel="panel-geoip" onclick="switchPanel('panel-geoip', this)">
+                <span class="nav-icon"><i class="fa-solid fa-earth-americas"></i></span>
+                <span>GeoIP Lookup</span>
+            </div>
+            <div class="nav-item" data-panel="panel-username" onclick="switchPanel('panel-username', this)">
+                <span class="nav-icon"><i class="fa-solid fa-user-secret"></i></span>
+                <span>Username Checker</span>
+            </div>
+            <div class="nav-item" data-panel="panel-wayback" onclick="switchPanel('panel-wayback', this)">
+                <span class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                <span>Wayback Machine</span>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="version">OSINT Analyzer v3.0 — Rako</div>
+        </div>
+    </aside>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="main-content">
+
+        <!-- ─── PANEL: Search ─── -->
+        <div class="tool-panel active" id="panel-search">
+            <div class="search-hero fade-in-up">
+                <h1><i class="fa-solid fa-satellite-dish"></i> OSINT Analyzer</h1>
+                <p>محرك بحث استخباراتي متقدم — اكتشف كل شيء من مصدر واحد</p>
+            </div>
+
+            <div class="glass-card fade-in-up" style="animation-delay: 0.1s;">
+                <form id="searchForm">
+                    <div class="search-input-group">
+                        <input type="text" id="queryInput" class="form-input" placeholder="ادخل اسم الشخص، الشركة، النطاق، أو أي استعلام ..." required>
+                        <button type="submit" class="btn btn-primary" id="searchBtn">
+                            <i class="fa-solid fa-magnifying-glass"></i> بحث
+                        </button>
+                    </div>
+                    <div class="search-options">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <label style="font-size:0.8rem;color:var(--text-secondary);">العمق:</label>
+                            <select id="depthSelect" class="form-select" style="width:auto; padding:8px 36px 8px 14px;">
+                                <option value="1">1 صفحة</option>
+                                <option value="2">2 صفحات</option>
+                                <option value="3" selected>3 صفحات</option>
+                                <option value="5">5 صفحات</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-secondary" id="exportBtn" onclick="exportResults()" style="display:none;">
+                            <i class="fa-solid fa-download"></i> تصدير JSON
+                        </button>
+                    </div>
+
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">جاري البحث...</div>
+                    </div>
+
+                    <div class="stats-bar" id="statsBar"></div>
+                    <div class="filter-tabs" id="filterTabs"></div>
+                </form>
+            </div>
+
+            <div id="resultMap" class="fade-in-up" style="animation-delay: 0.2s;">
+                <div class="map-placeholder">
+                    <i class="fa-solid fa-diagram-project"></i>
+                    <span>ابدأ البحث لعرض خريطة النتائج</span>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="input-group">
-                    <label class="input-group-text" for="depthSelect"><i class="fa-solid fa-layer-group"></i> العمق</label>
-                    <select id="depthSelect" class="form-select">
-                        <option value="1">1 صفحة</option>
-                        <option value="2">2 صفحات</option>
-                        <option value="3" selected>3 صفحات</option>
-                        <option value="5">5 صفحات</option>
-                    </select>
+
+            <div class="results-list" id="resultsSection" style="display:none;">
+                <div class="glass-card fade-in-up">
+                    <div class="results-list-header">
+                        <h4><i class="fa-solid fa-list-ul"></i> النتائج</h4>
+                    </div>
+                    <div class="results-scroll" id="results"></div>
                 </div>
             </div>
         </div>
 
-        <div class="progress-container" id="progressContainer">
-            <div class="progress-bar-custom">
-                <div class="progress-bar-fill" id="progressFill"></div>
+        <!-- ─── PANEL: Full Scan ─── -->
+        <div class="tool-panel" id="panel-fullscan">
+            <div class="glass-card fade-in-up" style="position:relative;">
+                <div class="glass-card-header">
+                    <div class="header-icon" style="background:var(--accent-soft);color:var(--accent);"><i class="fa-solid fa-radar"></i></div>
+                    <div>
+                        <h3>فحص شامل</h3>
+                        <div class="subtitle">DNS + WHOIS + SSL + Tech + Headers + GeoIP — كلهم في وقت واحد</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>النطاق / الهدف</label>
+                    <div style="display:flex;gap:10px;">
+                        <input type="text" class="form-input" id="fullscan-target" placeholder="example.com">
+                        <button type="button" class="btn btn-primary" onclick="runFullScan()">
+                            <i class="fa-solid fa-play"></i> ابدأ الفحص
+                        </button>
+                    </div>
+                </div>
+                <div class="result-output" id="fullscan-results">
+                    <div class="empty-state">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <p>ادخل نطاق وابدأ الفحص الشامل</p>
+                    </div>
+                </div>
+                <div class="loading-overlay" id="fullscan-loading">
+                    <div class="spinner"></div>
+                    <span>جاري الفحص الشامل...</span>
+                </div>
             </div>
-            <div class="progress-text" id="progressText">جاري البحث...</div>
         </div>
 
-        <div class="stats-bar" id="statsBar" style="display:none;"></div>
-    </form>
-
-    <div class="filter-tabs" id="filterTabs" style="display:none;"></div>
-
-    <div id="resultMap">
-        <div class="map-placeholder">
-            <i class="fa-solid fa-diagram-project"></i>
-            <span>ابدأ البحث لعرض خريطة النتائج</span>
-        </div>
-    </div>
-
-    <div class="results-section">
-        <h4><i class="fa-solid fa-list-ul"></i> النتائج</h4>
-        <div id="results">
-            <div style="text-align:center; color:var(--text-secondary); padding:2rem;">
-                <i class="fa-solid fa-inbox" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
-                لم يتم إجراء بحث بعد
+        <!-- ─── PANEL: DNS ─── -->
+        <div class="tool-panel" id="panel-dns">
+            <div class="glass-card fade-in-up" style="position:relative;">
+                <div class="glass-card-header">
+                    <div class="header-icon" style="background:var(--cyan-glow);color:var(--cyan);"><i class="fa-solid fa-globe"></i></div>
+                    <div>
+                        <h3>DNS Enumeration</h3>
+                        <div class="subtitle">اكتشف جميع سجلات DNS + SPF/DMARC/DKIM + Reverse DNS</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>النطاق</label>
+                    <div style="display:flex;gap:10px;">
+                        <input type="text" class="form-input" id="dns-domain" placeholder="example.com">
+                        <button type="button" class="btn btn-primary" onclick="runTool('dns')">
+                            <i class="fa-solid fa-search"></i> فحص
+                        </button>
+                    </div>
+                </div>
+                <div class="result-output" id="dns-results">
+                    <div class="empty-state"><i class="fa-solid fa-globe"></i><p>ادخل نطاق لعرض سجلات DNS</p></div>
+                </div>
+                <div class="loading-overlay" id="dns-loading"><div class="spinner"></div><span>جاري فحص DNS...</span></div>
             </div>
         </div>
-    </div>
+
+        <!-- ─── PANEL: WHOIS ─── -->
+        <div class="tool-panel" id="panel-whois">
+            <div class="glass-card fade-in-up" style="position:relative;">
+                <div class="glass-card-header">
+                    <div class="header-icon" style="background:var(--violet-glow);color:var(--violet);"><i class="fa-solid fa-clipboard-list"></i></div>
+                    <div>
+                        <h3>WHOIS Lookup</h3>
+                        <div class="subtitle">معلومات تسجيل النطاق — المالك، التواريخ، الخوادم</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>النطاق</label>
+                    <div style="display:flex;gap:10px;">
+                        <input type="text" class="form-input" id="whois-domain" placeholder="example.com">
+                        <button type="button" class="btn btn-primary" onclick="runTool('whois')">
+                            <i class="fa-solid fa-search"></i> بحث
+                        </button>
+                    </div>
+                </div>
+                <div class="result-output" id="whois-results">
+                    <div class="empty-state"><i class="fa-solid fa-clipboard-list"></i><p>ادخل نطاق لعرض معلومات WHOIS</p></div>
+                </div>
+                <div class="loading-overlay" id="whois-loading"><div class="spinner"></div><span>جاري البحث في WHOIS...</span></div>
+            </div>
+        </div>
+
+        <!-- ─── PANEL: SSL ─── -->
+        <div class="tool-panel" id="panel-ssl">
+            <div class="glass-card fade-in-up" style="position:relative;">
+                <div class="glass-card-header">
+                    <div class="header-icon" style="background:var(--emerald-glow);color:var(--emerald);"><i class="fa-solid fa-lock"></i></div>
+                    <div>
+                        <h3>SSL/TLS Inspector</h3>
+                        <div class="subtitle">فحص الشهادة — التقييم، التشفير، الصلاحية</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>اسم المضيف</label>
+                    <div style="display:flex;gap:10px;">
+                        <input type="text" class="form-input" id="ssl-hostname" placeholder="example.com">
+                        <button type="button" class="btn btn-primary" onclick="runTool('ssl')">
+                            <i class="fa-solid fa-shield-halved"></i> فحص
+                        </button>
+                    </div>
+                </div>
+                <div class="result-output" id="ssl-results">
+                    <div class="empty-state"><i class="fa-solid fa-lock"></i><p>ادخل اسم المضيف لفحص شهادة SSL</p></div>
+                </div>
+                <div class="loading-overlay" id="ssl-loading"><div class="spinner"></div><span>جاري فحص SSL...</span></div>
+            </div>
+        </div>
+
+        <!-- ─── PANEL: Ports ─── -->
+        <div class="tool-panel" id="panel-ports">
+            <div class="glass-card fade-in-up" style="position:relative;">
+                <div class="glass-card-header">
+                    <div class="header-icon" style="background:var(--rose-glow);color:var(--rose);"><i class="fa-solid fa-plug"></i></div>
+                    <div>
+                        <h3>Port Scanner</h3>
+                        <div class="subtitle">فحص المنافذ المفتوحة مع Banner Grabbing و Risk Assessment</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>المضيف / IP</label>
+                        <input type="text" class="form-input" id="ports-host" placeholder="example.com or 1.2.3.4">
+                    </div>
+                    <div class="form-group">
+                        <label>نوع الفحص</label>
+                        <select class="form-select" id="ports-scantype">
+                            <option value="common">شائعة (Common)</option>
+                            <option value="full">كامل (Full)</option>
+                            <option value="quick">سريع (Quick)</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="runTool('ports')" style="width:100%;">
+                    <i class="fa-solid fa-bolt"></i> بدء الفحص
+                </button>
+                <div class="result-output" id="ports-results">
+                    <div class="empty-state"><i class="fa-solid fa-plug"></i><p>ادخل مضيف لفحص المنافذ</p></div>
+                </div>
+                <div class="loading-overlay" id="ports-loading"><div class="spinner"></div><span>جاري فحص المنافذ...</span></div>
+            </div>
+        </div>
+
+        <!-- ─── PANEL: Subdomains ─── -->
+        <div class="tool-panel" id="panel-subdomains">
+            <div class="glass-card fade-in-up" style="position:relative;">
+                <div class="glass-card-header">
+                    <div class="header-icon" style="background:rgba(96,165,250,0.1);color:#60a5fa;"><i class="fa-solid fa-sitemap"></i></div>
+                    <div>
+                        <h3>Subdomain Finder</h3>
+                        <div class="subtitle">اكتشف النطاقات الفرعية عبر crt.sh + DNS Brute-force</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>النطاق</label>
+                    <div style="display:flex;gap:10px;">
+                        <input type="text" class="form-input" id="subdomains-domain" placeholder="example.com">
+                        <button type="button" class="btn btn-primary" onclick="runTool('subdomains')">
+                            <i class="fa-solid fa-search"></i> بحث
+                        </button>
+                    </div>
+                </div>
+                <div class="result-output" id="subdomains-results">
+                    <div class="empty-state"><i class="fa-solid fa-sitemap"></i><p>ادخل نطاق لاكتشاف النطاقات الفرعية</p></div>
+                </div>
+                <div class="loading-overlay" id="subdomains-loading"><div class="spinner"></div><span>جاري البحث...</span></div>
+            </div>
+        </div>
+
+        <!-- ─── PANEL: Tech ─── -->
+        <div class="tool-panel" id="panel-tech">
+            <div class="glass-card fade-in-up" style="position:relative;">
+                <div class="glass-card-header">
+                    <div class="header-icon" style="background:rgba(251,146,60,0.1);color:#fb923c;"><i class="fa-solid fa-microchip"></i></div>
+                    <div>
+                        <h3>Technology Detector</h3>
+                        <div class="subtitle">اكتشف التقنيات المستخدمة في الموقع — CMS, Frameworks, CDN</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>الرابط (URL)</label>
+                    <div style="display:flex;gap:10px;">
+                        <input type="text" class="form-input" id="tech-url" placeholder="https://example.com">
+                        <button type="button" class="btn btn-primary" onclick="runTool('tech')">
+                            <i class="fa-solid fa-search"></i> كشف
+                        </button>
+                    </div>
+                </div>
+                <div class="result-output" id="tech-results">
+                    <div class="empty-state"><i class="fa-solid fa-microchip"></i><p>ادخل رابط لاكتشاف التقنيات</p></div>
+                </div>
+                <div class="loading-overlay" id="tech-loading"><div class="spinner"></div><span>جاري الكشف...</span></div>
+            </div>
+        </div>
+
+        <!-- ─── PANEL: Headers ─── -->
+        <div class="tool-panel" id="panel-headers">
+            <div class="glass-card fade-in-up" style="position:relative;">
+                <div class="glass-card-header">
+                    <div class="header-icon" style="background:rgba(139,92,246,0.1);color:#8b5cf6;"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div>
+                        <h3>HTTP Security Headers</h3>
+                        <div class="subtitle">تحليل أمان الترويسات — Score + Missing Headers + Recommendations</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>الرابط (URL)</label>
+                    <div style="display:flex;gap:10px;">
+                        <input type="text" class="form-input" id="headers-url" placeholder="https://example.com">
+                        <button type="button" class="btn btn-primary" onclick="runTool('headers')">
+                            <i class="fa-solid fa-shield-halved"></i> تحليل
+                        </button>
+                    </div>
+                </div>
+                <div class="result-output" id="headers-results">
+                    <div class="empty-state"><i class="fa-solid fa-shield-halved"></i><p>ادخل رابط لتحليل ترويسات الأمان</p></div>
+                </div>
+                <div class="loading-overlay" id="headers-loading"><div class="spinner"></div><span>جاري التحليل...</span></div>
+            </div>
+        </div>
+
+        <!-- ─── PANEL: GeoIP ─── -->
+        <div class="tool-panel" id="panel-geoip">
+            <div class="glass-card fade-in-up" style="position:relative;">
+                <div class="glass-card-header">
+                    <div class="header-icon" style="background:rgba(52,211,153,0.1);color:var(--emerald);"><i class="fa-solid fa-earth-americas"></i></div>
+                    <div>
+                        <h3>GeoIP Lookup</h3>
+                        <div class="subtitle">تحديد الموقع الجغرافي لعنوان IP أو نطاق</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>IP / اسم المضيف</label>
+                    <div style="display:flex;gap:10px;">
+                        <input type="text" class="form-input" id="geoip-target" placeholder="8.8.8.8 أو example.com">
+                        <button type="button" class="btn btn-primary" onclick="runTool('geoip')">
+                            <i class="fa-solid fa-location-dot"></i> بحث
+                        </button>
+                    </div>
+                </div>
+                <div class="result-output" id="geoip-results">
+                    <div class="empty-state"><i class="fa-solid fa-earth-americas"></i><p>ادخل IP أو نطاق لتحديد الموقع</p></div>
+                </div>
+                <div class="loading-overlay" id="geoip-loading"><div class="spinner"></div><span>جاري تحديد الموقع...</span></div>
+            </div>
+        </div>
+
+        <!-- ─── PANEL: Username ─── -->
+        <div class="tool-panel" id="panel-username">
+            <div class="glass-card fade-in-up" style="position:relative;">
+                <div class="glass-card-header">
+                    <div class="header-icon" style="background:rgba(245,158,11,0.1);color:var(--accent);"><i class="fa-solid fa-user-secret"></i></div>
+                    <div>
+                        <h3>Username Checker</h3>
+                        <div class="subtitle">تحقق من وجود اسم المستخدم عبر 30+ منصة</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>اسم المستخدم</label>
+                    <div style="display:flex;gap:10px;">
+                        <input type="text" class="form-input" id="username-input" placeholder="johndoe">
+                        <button type="button" class="btn btn-primary" onclick="runTool('username')">
+                            <i class="fa-solid fa-search"></i> تحقق
+                        </button>
+                    </div>
+                </div>
+                <div class="result-output" id="username-results">
+                    <div class="empty-state"><i class="fa-solid fa-user-secret"></i><p>ادخل اسم مستخدم للبحث في المنصات</p></div>
+                </div>
+                <div class="loading-overlay" id="username-loading"><div class="spinner"></div><span>جاري التحقق من المنصات...</span></div>
+            </div>
+        </div>
+
+        <!-- ─── PANEL: Wayback ─── -->
+        <div class="tool-panel" id="panel-wayback">
+            <div class="glass-card fade-in-up" style="position:relative;">
+                <div class="glass-card-header">
+                    <div class="header-icon" style="background:rgba(34,211,238,0.1);color:var(--cyan);"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                    <div>
+                        <h3>Wayback Machine</h3>
+                        <div class="subtitle">استعرض اللقطات التاريخية لأي موقع من أرشيف الإنترنت</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>الرابط (URL)</label>
+                        <input type="text" class="form-input" id="wayback-url" placeholder="example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>الحد الأقصى</label>
+                        <select class="form-select" id="wayback-limit">
+                            <option value="10">10 لقطات</option>
+                            <option value="20" selected>20 لقطة</option>
+                            <option value="50">50 لقطة</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="runTool('wayback')" style="width:100%;">
+                    <i class="fa-solid fa-clock-rotate-left"></i> بحث في الأرشيف
+                </button>
+                <div class="result-output" id="wayback-results">
+                    <div class="empty-state"><i class="fa-solid fa-clock-rotate-left"></i><p>ادخل رابط لاستعراض اللقطات التاريخية</p></div>
+                </div>
+                <div class="loading-overlay" id="wayback-loading"><div class="spinner"></div><span>جاري البحث في الأرشيف...</span></div>
+            </div>
+        </div>
+
+    </main>
 </div>
 
+<!-- Tooltip -->
 <div id="tooltip" class="tooltip-custom"></div>
 
+<!-- ═══ SCRIPTS ═══ -->
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <script>
-// ────────────────────────────────────────────────────────────────────
-//  COMPREHENSIVE ICON & COLOR MAPPING — 100% Coverage
-// ────────────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+//  PLATFORM & ICON CONFIG
+// ════════════════════════════════════════════════════════════════════
 
-// Platform icons: [color, favicon-domain, fontAwesomeClass]
-// Uses Google Favicon API as primary, FA icon as fallback label
 const PLATFORM_CONFIG = {
-    // ── Social Media ──
     "Facebook":     { color: "#1877F2", domain: "facebook.com",       fa: "fa-brands fa-facebook-f" },
     "Twitter/X":    { color: "#1DA1F2", domain: "x.com",             fa: "fa-brands fa-x-twitter" },
     "Twitter":      { color: "#1DA1F2", domain: "x.com",             fa: "fa-brands fa-x-twitter" },
@@ -454,14 +1479,10 @@ const PLATFORM_CONFIG = {
     "Flickr":       { color: "#0063DC", domain: "flickr.com",        fa: "fa-brands fa-flickr" },
     "VK":           { color: "#4680C2", domain: "vk.com",            fa: "fa-brands fa-vk" },
     "Weibo":        { color: "#E6162D", domain: "weibo.com",         fa: "fa-brands fa-weibo" },
-
-    // ── Professional ──
     "AngelList":    { color: "#000000", domain: "wellfound.com",     fa: "fa-brands fa-angellist" },
     "Glassdoor":    { color: "#0CAA41", domain: "glassdoor.com",     fa: "fa-solid fa-building" },
     "Crunchbase":   { color: "#0288D1", domain: "crunchbase.com",    fa: "fa-solid fa-chart-line" },
     "Indeed":       { color: "#2164F3", domain: "indeed.com",        fa: "fa-solid fa-briefcase" },
-
-    // ── Developer ──
     "GitHub":       { color: "#181717", domain: "github.com",        fa: "fa-brands fa-github" },
     "GitLab":       { color: "#FC6D26", domain: "gitlab.com",        fa: "fa-brands fa-gitlab" },
     "Bitbucket":    { color: "#0052CC", domain: "bitbucket.org",     fa: "fa-brands fa-bitbucket" },
@@ -472,71 +1493,18 @@ const PLATFORM_CONFIG = {
     "npm":          { color: "#CB3837", domain: "npmjs.com",         fa: "fa-brands fa-npm" },
     "PyPI":         { color: "#3775A9", domain: "pypi.org",          fa: "fa-brands fa-python" },
     "Medium":       { color: "#000000", domain: "medium.com",        fa: "fa-brands fa-medium" },
-
-    // ── Education ──
-    "Coursera":     { color: "#0056D2", domain: "coursera.org",      fa: "fa-solid fa-graduation-cap" },
-    "edX":          { color: "#02262B", domain: "edx.org",           fa: "fa-solid fa-graduation-cap" },
-    "Udemy":        { color: "#A435F0", domain: "udemy.com",         fa: "fa-solid fa-chalkboard-user" },
-    "Khan Academy": { color: "#14BF96", domain: "khanacademy.org",   fa: "fa-solid fa-school" },
-    "Codecademy":   { color: "#1F4056", domain: "codecademy.com",    fa: "fa-solid fa-code" },
-    "Pluralsight":  { color: "#F15B2A", domain: "pluralsight.com",   fa: "fa-solid fa-play-circle" },
-    "Udacity":      { color: "#02B3E4", domain: "udacity.com",       fa: "fa-solid fa-robot" },
-    "FutureLearn":  { color: "#DE00A5", domain: "futurelearn.com",   fa: "fa-solid fa-book-open" },
-    "Skillshare":   { color: "#00FF84", domain: "skillshare.com",    fa: "fa-solid fa-palette" },
-
-    // ── News ──
-    "CNN":            { color: "#CC0000", domain: "cnn.com",           fa: "fa-solid fa-newspaper" },
-    "BBC":            { color: "#BB1919", domain: "bbc.com",           fa: "fa-solid fa-newspaper" },
-    "NYTimes":        { color: "#000000", domain: "nytimes.com",       fa: "fa-solid fa-newspaper" },
-    "The Guardian":   { color: "#052962", domain: "theguardian.com",   fa: "fa-solid fa-newspaper" },
-    "Reuters":        { color: "#FF8000", domain: "reuters.com",       fa: "fa-solid fa-newspaper" },
-    "Al Jazeera":     { color: "#D2A44B", domain: "aljazeera.com",     fa: "fa-solid fa-newspaper" },
-    "Fox News":       { color: "#003366", domain: "foxnews.com",       fa: "fa-solid fa-newspaper" },
-    "Washington Post":{ color: "#000000", domain: "washingtonpost.com",fa: "fa-solid fa-newspaper" },
-    "Bloomberg":      { color: "#472A91", domain: "bloomberg.com",     fa: "fa-solid fa-chart-bar" },
-    "TechCrunch":     { color: "#0A9E01", domain: "techcrunch.com",    fa: "fa-solid fa-microchip" },
-    "Wired":          { color: "#000000", domain: "wired.com",         fa: "fa-solid fa-bolt" },
-    "Ars Technica":   { color: "#FF4E00", domain: "arstechnica.com",   fa: "fa-solid fa-flask" },
-    "The Verge":      { color: "#E5127D", domain: "theverge.com",      fa: "fa-solid fa-podcast" },
-
-    // ── Academic ──
-    "Academic":       { color: "#4A90D9", domain: "edu",               fa: "fa-solid fa-university" },
-    "Google Scholar": { color: "#4285F4", domain: "scholar.google.com",fa: "fa-solid fa-book" },
-    "ResearchGate":   { color: "#00CCBB", domain: "researchgate.net",  fa: "fa-brands fa-researchgate" },
-    "Academia.edu":   { color: "#41454A", domain: "academia.edu",      fa: "fa-solid fa-graduation-cap" },
-
-    // ── Paste / Leak ──
-    "Pastebin":     { color: "#02456C", domain: "pastebin.com",      fa: "fa-solid fa-paste" },
-    "Ghostbin":     { color: "#2D2D2D", domain: "ghostbin.co",       fa: "fa-solid fa-ghost" },
-    "Hastebin":     { color: "#4A90D9", domain: "hastebin.com",      fa: "fa-solid fa-paste" },
-
-    // ── Forum ──
     "Quora":        { color: "#B92B27", domain: "quora.com",         fa: "fa-brands fa-quora" },
-    "4chan":         { color: "#006600", domain: "4chan.org",          fa: "fa-solid fa-comments" },
-
-    // ── Contact ──
-    "Email":          { color: "#EA4335", domain: "gmail.com",         fa: "fa-solid fa-envelope" },
-    "Emails":         { color: "#EA4335", domain: "gmail.com",         fa: "fa-solid fa-envelope" },
-    "Phone":          { color: "#4CAF50", domain: null,                fa: "fa-solid fa-phone" },
-    "Phone Numbers":  { color: "#4CAF50", domain: null,                fa: "fa-solid fa-phone" },
-
-    // ── Files ──
-    "Document":       { color: "#4285F4", domain: null,  fa: "fa-solid fa-file-pdf" },
-    "Spreadsheet":    { color: "#0F9D58", domain: null,  fa: "fa-solid fa-file-excel" },
-    "Presentation":   { color: "#F4B400", domain: null,  fa: "fa-solid fa-file-powerpoint" },
-    "Data File":      { color: "#7B1FA2", domain: null,  fa: "fa-solid fa-database" },
-
-    // ── Government / Official ──
-    "Government":       { color: "#1B5E20", domain: null,  fa: "fa-solid fa-landmark" },
-    "Official Website": { color: "#1565C0", domain: null,  fa: "fa-solid fa-shield-halved" },
-
-    // ── Fallback ──
-    "General Website":  { color: "#60a5fa", domain: null,  fa: "fa-solid fa-globe" },
-    "Websites":         { color: "#60a5fa", domain: null,  fa: "fa-solid fa-globe" },
-    "Unknown":          { color: "#6b7280", domain: null,  fa: "fa-solid fa-circle-question" },
+    "Email":        { color: "#EA4335", domain: "gmail.com",         fa: "fa-solid fa-envelope" },
+    "Emails":       { color: "#EA4335", domain: "gmail.com",         fa: "fa-solid fa-envelope" },
+    "Phone":        { color: "#4CAF50", domain: null,                fa: "fa-solid fa-phone" },
+    "Phone Numbers":{ color: "#4CAF50", domain: null,                fa: "fa-solid fa-phone" },
+    "Document":     { color: "#4285F4", domain: null,                fa: "fa-solid fa-file-pdf" },
+    "Government":   { color: "#1B5E20", domain: null,                fa: "fa-solid fa-landmark" },
+    "General Website": { color: "#60a5fa", domain: null,             fa: "fa-solid fa-globe" },
+    "Websites":     { color: "#60a5fa", domain: null,                fa: "fa-solid fa-globe" },
+    "Unknown":      { color: "#6b7280", domain: null,                fa: "fa-solid fa-circle-question" },
 };
 
-// Category colors for badges
 const CATEGORY_COLORS = {
     "social":       { bg: "rgba(29,161,242,0.15)", text: "#60a5fa" },
     "professional": { bg: "rgba(10,102,194,0.15)", text: "#60a5fa" },
@@ -553,36 +1521,19 @@ const CATEGORY_COLORS = {
     "website":      { bg: "rgba(96,165,250,0.10)",  text: "#94a3b8" },
 };
 
-// ────────────────────────────────────────────────────────────────────
-//  ICON GENERATION — Canvas-based for 100% reliability
-// ────────────────────────────────────────────────────────────────────
-
-// Cache generated icon URLs
 const iconCache = {};
 
-/**
- * Generate a reliable icon using Google Favicon API, with canvas fallback.
- * Returns a data URL that vis.js can always render.
- */
 function getIconUrl(platform) {
     if (iconCache[platform]) return iconCache[platform];
-
     const config = PLATFORM_CONFIG[platform] || PLATFORM_CONFIG["General Website"];
-    
-    // If we have a domain, use Google's Favicon API
     if (config.domain) {
         const url = `https://www.google.com/s2/favicons?domain=${config.domain}&sz=64`;
         iconCache[platform] = url;
         return url;
     }
-    
-    // Otherwise, generate a canvas icon with the platform initial
     const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
+    canvas.width = 64; canvas.height = 64;
     const ctx = canvas.getContext('2d');
-    
-    // Draw colored circle
     ctx.beginPath();
     ctx.arc(32, 32, 30, 0, Math.PI * 2);
     ctx.fillStyle = config.color;
@@ -590,62 +1541,93 @@ function getIconUrl(platform) {
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.lineWidth = 2;
     ctx.stroke();
-    
-    // Draw text
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 24px Rubik, sans-serif';
+    ctx.font = 'bold 24px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const initial = platform.charAt(0).toUpperCase();
-    ctx.fillText(initial, 32, 33);
-    
+    ctx.fillText(platform.charAt(0).toUpperCase(), 32, 33);
     const dataUrl = canvas.toDataURL('image/png');
     iconCache[platform] = dataUrl;
     return dataUrl;
 }
 
-/**
- * Preload all icons by creating Image objects.
- * This ensures vis.js has the images ready.
- */
 function preloadIcons(platforms) {
-    const promises = platforms.map(p => {
-        return new Promise((resolve) => {
-            const url = getIconUrl(p);
-            if (url.startsWith('data:')) {
-                resolve();
-                return;
-            }
-            const img = new Image();
-            img.onload = resolve;
-            img.onerror = () => {
-                // Fallback to canvas if favicon fails
-                const config = PLATFORM_CONFIG[p] || PLATFORM_CONFIG["General Website"];
-                const canvas = document.createElement('canvas');
-                canvas.width = 64;
-                canvas.height = 64;
-                const ctx = canvas.getContext('2d');
-                ctx.beginPath();
-                ctx.arc(32, 32, 30, 0, Math.PI * 2);
-                ctx.fillStyle = config.color;
-                ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 24px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(p.charAt(0), 32, 33);
-                iconCache[p] = canvas.toDataURL('image/png');
-                resolve();
-            };
-            img.src = url;
-        });
-    });
-    return Promise.all(promises);
+    return Promise.all(platforms.map(p => new Promise(resolve => {
+        const url = getIconUrl(p);
+        if (url.startsWith('data:')) { resolve(); return; }
+        const img = new Image();
+        img.onload = resolve;
+        img.onerror = () => {
+            const config = PLATFORM_CONFIG[p] || PLATFORM_CONFIG["General Website"];
+            const c = document.createElement('canvas');
+            c.width = 64; c.height = 64;
+            const ctx = c.getContext('2d');
+            ctx.beginPath(); ctx.arc(32,32,30,0,Math.PI*2); ctx.fillStyle = config.color; ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(p.charAt(0), 32, 33);
+            iconCache[p] = c.toDataURL('image/png');
+            resolve();
+        };
+        img.src = url;
+    })));
 }
 
-// ────────────────────────────────────────────────────────────────────
-//  APPLICATION LOGIC
-// ────────────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+//  SIDEBAR & PANEL NAVIGATION
+// ════════════════════════════════════════════════════════════════════
+
+function switchPanel(panelId, navItem) {
+    document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const panel = document.getElementById(panelId);
+    if (panel) panel.classList.add('active');
+    if (navItem) navItem.classList.add('active');
+    // Close sidebar on mobile
+    if (window.innerWidth <= 1024) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('open');
+    }
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  UTILITY FUNCTIONS
+// ════════════════════════════════════════════════════════════════════
+
+function escapeHtml(str) {
+    if (!str) return "";
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function showLoading(toolId) {
+    const el = document.getElementById(`${toolId}-loading`);
+    if (el) el.classList.add('active');
+}
+
+function hideLoading(toolId) {
+    const el = document.getElementById(`${toolId}-loading`);
+    if (el) el.classList.remove('active');
+}
+
+async function apiPost(endpoint, data) {
+    const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  MAIN SEARCH LOGIC (Preserved + Enhanced)
+// ════════════════════════════════════════════════════════════════════
 
 const tooltip = document.getElementById("tooltip");
 let currentResults = [];
@@ -662,7 +1644,7 @@ document.getElementById("searchForm").onsubmit = async function(e) {
     const progressText = document.getElementById("progressText");
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري البحث...';
+    btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;"></span> جاري البحث...';
     progress.style.display = "block";
     progressFill.style.width = "30%";
     progressText.textContent = "🔍 جاري البحث...";
@@ -679,21 +1661,16 @@ document.getElementById("searchForm").onsubmit = async function(e) {
         progressFill.style.width = "90%";
         progressText.textContent = "📊 جاري تحليل النتائج...";
 
-        // Normalize data — support both old format (type) and new format (platform/category)
-        currentResults = (data || []).map(r => {
-            return {
-                title: r.title || "بدون عنوان",
-                link: r.link || "#",
-                snippet: r.snippet || "",
-                source: r.source || "",
-                image: r.image || null,
-                // Support both old and new API format
-                platform: r.platform || r.type || "General Website",
-                category: r.category || "website",
-            };
-        });
+        currentResults = (data || []).map(r => ({
+            title: r.title || "بدون عنوان",
+            link: r.link || "#",
+            snippet: r.snippet || "",
+            source: r.source || "",
+            image: r.image || null,
+            platform: r.platform || r.type || "General Website",
+            category: r.category || "website",
+        }));
 
-        // Preload icons for all unique platforms
         const uniquePlatforms = [...new Set(currentResults.map(r => r.platform))];
         await preloadIcons(uniquePlatforms);
 
@@ -704,14 +1681,15 @@ document.getElementById("searchForm").onsubmit = async function(e) {
         renderFilterTabs(currentResults);
         renderResults(currentResults);
         renderGraph(currentResults, query);
+
+        document.getElementById('exportBtn').style.display = 'inline-flex';
+        document.getElementById('resultsSection').style.display = 'block';
     } catch (err) {
         progressText.textContent = "❌ حدث خطأ أثناء البحث";
         console.error(err);
         document.getElementById("results").innerHTML =
-            `<div style="text-align:center;color:#f87171;padding:2rem;">
-                <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem;display:block;margin-bottom:0.5rem;"></i>
-                حدث خطأ أثناء البحث. تأكد من تشغيل السيرفر.
-            </div>`;
+            `<div class="empty-state"><i class="fa-solid fa-triangle-exclamation" style="color:var(--rose);"></i><p style="color:var(--rose);">حدث خطأ أثناء البحث. تأكد من تشغيل السيرفر.</p></div>`;
+        document.getElementById('resultsSection').style.display = 'block';
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> بحث';
@@ -722,16 +1700,12 @@ document.getElementById("searchForm").onsubmit = async function(e) {
 // ── Stats ──
 function renderStats(data) {
     const bar = document.getElementById("statsBar");
-    bar.style.display = "flex";
-    
+    bar.classList.add('visible');
     const categories = {};
-    data.forEach(r => {
-        categories[r.category] = (categories[r.category] || 0) + 1;
-    });
-    
+    data.forEach(r => { categories[r.category] = (categories[r.category] || 0) + 1; });
     bar.innerHTML = `
         <div class="stat-chip"><i class="fa-solid fa-chart-pie"></i> إجمالي: <span class="count">${data.length}</span></div>
-        ${Object.entries(categories).map(([cat, count]) => 
+        ${Object.entries(categories).map(([cat, count]) =>
             `<div class="stat-chip"><span class="count">${count}</span> ${cat}</div>`
         ).join('')}
     `;
@@ -740,38 +1714,26 @@ function renderStats(data) {
 // ── Filter Tabs ──
 function renderFilterTabs(data) {
     const container = document.getElementById("filterTabs");
-    container.style.display = "flex";
-    
+    container.classList.add('visible');
     const platforms = {};
-    data.forEach(r => {
-        platforms[r.platform] = (platforms[r.platform] || 0) + 1;
-    });
-
-    let html = `<button class="filter-tab active" data-filter="all" onclick="filterResults('all', this)">
+    data.forEach(r => { platforms[r.platform] = (platforms[r.platform] || 0) + 1; });
+    let html = `<button class="filter-tab active" onclick="filterResults('all', this)">
         <i class="fa-solid fa-border-all"></i> الكل <span class="tab-count">${data.length}</span>
     </button>`;
-    
-    // Sort by count
-    const sorted = Object.entries(platforms).sort((a, b) => b[1] - a[1]);
-    for (const [platform, count] of sorted) {
+    Object.entries(platforms).sort((a, b) => b[1] - a[1]).forEach(([platform, count]) => {
         const config = PLATFORM_CONFIG[platform] || PLATFORM_CONFIG["General Website"];
-        html += `<button class="filter-tab" data-filter="${platform}" onclick="filterResults('${platform.replace(/'/g, "\\'")}', this)">
+        html += `<button class="filter-tab" onclick="filterResults('${platform.replace(/'/g, "\\'")}', this)">
             <i class="${config.fa}"></i> ${platform} <span class="tab-count">${count}</span>
         </button>`;
-    }
-    
+    });
     container.innerHTML = html;
 }
 
 function filterResults(platform, btn) {
-    // Update active tab
     document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
-    
     currentFilter = platform;
-    const filtered = platform === "all" 
-        ? currentResults 
-        : currentResults.filter(r => r.platform === platform);
+    const filtered = platform === "all" ? currentResults : currentResults.filter(r => r.platform === platform);
     renderResults(filtered);
 }
 
@@ -779,83 +1741,56 @@ function filterResults(platform, btn) {
 function renderResults(data) {
     const container = document.getElementById("results");
     container.innerHTML = "";
-
     if (!data || data.length === 0) {
-        container.innerHTML = `
-            <div style="text-align:center; color:var(--text-secondary); padding:2rem;">
-                <i class="fa-solid fa-face-meh" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
-                لا توجد نتائج
-            </div>`;
+        container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-face-meh"></i><p>لا توجد نتائج</p></div>`;
         return;
     }
-
-    data.forEach(result => {
+    data.forEach((result, i) => {
         const config = PLATFORM_CONFIG[result.platform] || PLATFORM_CONFIG["General Website"];
         const catColor = CATEGORY_COLORS[result.category] || CATEGORY_COLORS["website"];
         const iconUrl = getIconUrl(result.platform);
-
         const card = document.createElement("div");
         card.className = "result-card";
+        card.style.animationDelay = `${i * 0.03}s`;
         card.innerHTML = `
             <div class="icon-wrapper" style="border-color:${config.color}40;">
-                <img src="${iconUrl}" alt="${result.platform}" 
-                     onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'${config.fa}\\' style=\\'font-size:1.4rem; color:${config.color}\\'></i>';">
+                <img src="${iconUrl}" alt="${result.platform}"
+                     onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'${config.fa}\\' style=\\'font-size:1.2rem; color:${config.color}\\'></i>';">
             </div>
             <div class="info">
                 <div class="title">${escapeHtml(result.title)}</div>
                 <div class="link">${escapeHtml(result.link)}</div>
                 <div class="badges">
-                    <span class="badge-platform" style="background:${config.color}22; color:${config.color};">
-                        <i class="${config.fa}" style="font-size:0.65rem;"></i> ${result.platform}
+                    <span class="badge-platform" style="background:${config.color}18; color:${config.color};">
+                        <i class="${config.fa}" style="font-size:0.6rem;"></i> ${result.platform}
                     </span>
-                    <span class="badge-category" style="background:${catColor.bg}; color:${catColor.text};">
-                        ${result.category}
-                    </span>
-                    ${result.source ? `<span class="badge-category">${result.source}</span>` : ''}
+                    <span class="badge" style="background:${catColor.bg}; color:${catColor.text};">${result.category}</span>
+                    ${result.source ? `<span class="badge badge-muted">${result.source}</span>` : ''}
                 </div>
             </div>
-            <a href="${escapeHtml(result.link)}" target="_blank" rel="noopener noreferrer" class="btn-detail">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i> فتح
+            <a href="${escapeHtml(result.link)}" target="_blank" rel="noopener noreferrer" class="btn-open">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
         `;
         container.appendChild(card);
     });
 }
 
-// ── Render Graph ──
+// ── Graph ──
 async function renderGraph(data, queryName) {
     const mapContainer = document.getElementById("resultMap");
-    
     if (!data || data.length === 0) {
-        mapContainer.innerHTML = `
-            <div class="map-placeholder">
-                <i class="fa-solid fa-diagram-project"></i>
-                <span>لا توجد نتائج لرسم الخريطة</span>
-            </div>`;
+        mapContainer.innerHTML = `<div class="map-placeholder"><i class="fa-solid fa-diagram-project"></i><span>لا توجد نتائج لرسم الخريطة</span></div>`;
         return;
     }
-
-    // Group by platform
     const typeGroups = {};
-    data.forEach(r => {
-        if (!typeGroups[r.platform]) typeGroups[r.platform] = [];
-        typeGroups[r.platform].push(r);
-    });
-
+    data.forEach(r => { if (!typeGroups[r.platform]) typeGroups[r.platform] = []; typeGroups[r.platform].push(r); });
     let nodes = [], edges = [], nid = 2;
 
-    // Central node
     nodes.push({
-        id: 1,
-        label: queryName,
-        shape: "box",
-        color: {
-            background: "#f59e0b",
-            border: "#f97316",
-            highlight: { background: "#fbbf24", border: "#f59e0b" }
-        },
-        font: { color: "#000", size: 18, face: "Rubik" },
-        borderWidth: 2,
+        id: 1, label: queryName, shape: "box",
+        color: { background: "#f59e0b", border: "#f97316", highlight: { background: "#fbbf24", border: "#f59e0b" } },
+        font: { color: "#000", size: 18, face: "Inter" }, borderWidth: 2,
         shadow: { enabled: true, color: "rgba(245,158,11,0.5)", size: 20 },
         title: `🔍 ${queryName}`
     });
@@ -864,104 +1799,43 @@ async function renderGraph(data, queryName) {
         const typeId = nid++;
         const config = PLATFORM_CONFIG[platform] || PLATFORM_CONFIG["General Website"];
         const iconUrl = getIconUrl(platform);
-
-        // Platform group node
         nodes.push({
-            id: typeId,
-            label: `${platform} (${typeGroups[platform].length})`,
-            shape: "circularImage",
-            image: iconUrl,
-            size: 30,
-            color: {
-                border: config.color,
-                highlight: { border: config.color }
-            },
-            borderWidth: 3,
-            font: { color: "#fff", size: 14, face: "Rubik" },
+            id: typeId, label: `${platform} (${typeGroups[platform].length})`,
+            shape: "circularImage", image: iconUrl, size: 30,
+            color: { border: config.color, highlight: { border: config.color } },
+            borderWidth: 3, font: { color: "#fff", size: 14, face: "Inter" },
             title: `📂 ${platform}\nعدد النتائج: ${typeGroups[platform].length}`,
             brokenImage: getIconUrl("General Website"),
         });
-        
-        edges.push({
-            from: 1,
-            to: typeId,
-            arrows: { to: { enabled: true, scaleFactor: 1.5 } },
-            smooth: { type: "cubicBezier" },
-            length: 350,
-            color: { color: config.color + "80", highlight: config.color },
-            width: 2,
-        });
+        edges.push({ from: 1, to: typeId, arrows: { to: { enabled: true, scaleFactor: 1.5 } },
+            smooth: { type: "cubicBezier" }, length: 350,
+            color: { color: config.color + "80", highlight: config.color }, width: 2 });
 
-        // Individual result nodes
         typeGroups[platform].forEach(result => {
             const id = nid++;
-            const resultIcon = result.image || iconUrl;
-            
             nodes.push({
-                id,
-                label: result.title.length > 30 ? result.title.substring(0, 30) + "..." : result.title,
-                shape: "circularImage",
-                image: resultIcon,
-                size: 20,
-                color: {
-                    border: config.color + "80",
-                    highlight: { border: config.color }
-                },
-                borderWidth: 2,
-                font: { color: "#ccc", size: 11, face: "Rubik" },
+                id, label: result.title.length > 30 ? result.title.substring(0, 30) + "..." : result.title,
+                shape: "circularImage", image: result.image || iconUrl, size: 20,
+                color: { border: config.color + "80", highlight: { border: config.color } },
+                borderWidth: 2, font: { color: "#ccc", size: 11, face: "Inter" },
                 title: `${result.title}\n🔗 ${result.link}\n📂 ${result.platform}`,
-                brokenImage: iconUrl,
-                url: result.link,
+                brokenImage: iconUrl, url: result.link,
             });
-            
-            edges.push({
-                from: typeId,
-                to: id,
-                arrows: { to: { enabled: true, scaleFactor: 0.8 } },
-                dashes: [5, 5],
-                smooth: { type: "cubicBezier" },
-                length: 200,
-                color: { color: config.color + "40", highlight: config.color + "80" },
-                width: 1,
-            });
+            edges.push({ from: typeId, to: id, arrows: { to: { enabled: true, scaleFactor: 0.8 } },
+                dashes: [5, 5], smooth: { type: "cubicBezier" }, length: 200,
+                color: { color: config.color + "40", highlight: config.color + "80" }, width: 1 });
         });
     }
 
-    // Clear container
     mapContainer.innerHTML = "";
-    
     const network = new vis.Network(mapContainer, {
-        nodes: new vis.DataSet(nodes),
-        edges: new vis.DataSet(edges)
+        nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges)
     }, {
-        physics: {
-            enabled: true,
-            barnesHut: {
-                gravitationalConstant: -10000,
-                centralGravity: 0.3,
-                springLength: 300,
-                springConstant: 0.04,
-                damping: 0.09,
-                avoidOverlap: 0.5
-            },
-            stabilization: { iterations: 150 }
-        },
-        interaction: {
-            hover: true,
-            zoomView: true,
-            dragView: true,
-            tooltipDelay: 200,
-        },
-        nodes: {
-            shadow: {
-                enabled: true,
-                color: "rgba(0,0,0,0.3)",
-                size: 10
-            }
-        }
+        physics: { enabled: true, barnesHut: { gravitationalConstant: -10000, centralGravity: 0.3, springLength: 300, springConstant: 0.04, damping: 0.09, avoidOverlap: 0.5 }, stabilization: { iterations: 150 } },
+        interaction: { hover: true, zoomView: true, dragView: true, tooltipDelay: 200 },
+        nodes: { shadow: { enabled: true, color: "rgba(0,0,0,0.3)", size: 10 } }
     });
 
-    // Tooltip on hover
     network.on("hoverNode", function(params) {
         const node = network.body.data.nodes.get(params.node);
         if (node && node.title) {
@@ -972,25 +1846,581 @@ async function renderGraph(data, queryName) {
         }
     });
     network.on("blurNode", () => tooltip.style.display = "none");
-    
-    // Open URL on double-click
     network.on("doubleClick", function(params) {
         if (params.nodes.length > 0) {
             const node = network.body.data.nodes.get(params.nodes[0]);
-            if (node && node.url) {
-                window.open(node.url, "_blank");
-            }
+            if (node && node.url) window.open(node.url, "_blank");
         }
     });
 }
 
-// ── Utility ──
-function escapeHtml(str) {
-    if (!str) return "";
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
+// ════════════════════════════════════════════════════════════════════
+//  EXPORT RESULTS
+// ════════════════════════════════════════════════════════════════════
+
+async function exportResults() {
+    if (!currentResults.length) return;
+    try {
+        const res = await fetch('/api/export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ results: currentResults, exported_at: new Date().toISOString() })
+        });
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'osint_results.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error('Export error:', err);
+    }
 }
+
+// ════════════════════════════════════════════════════════════════════
+//  TOOL RUNNERS — Each tool panel
+// ════════════════════════════════════════════════════════════════════
+
+async function runTool(tool) {
+    let endpoint, data, resultId;
+
+    switch (tool) {
+        case 'dns':
+            data = { domain: document.getElementById('dns-domain').value.trim() };
+            if (!data.domain) return;
+            endpoint = '/api/dns'; resultId = 'dns';
+            break;
+        case 'whois':
+            data = { domain: document.getElementById('whois-domain').value.trim() };
+            if (!data.domain) return;
+            endpoint = '/api/whois'; resultId = 'whois';
+            break;
+        case 'ssl':
+            data = { hostname: document.getElementById('ssl-hostname').value.trim() };
+            if (!data.hostname) return;
+            endpoint = '/api/ssl'; resultId = 'ssl';
+            break;
+        case 'ports':
+            data = { host: document.getElementById('ports-host').value.trim(), scan_type: document.getElementById('ports-scantype').value };
+            if (!data.host) return;
+            endpoint = '/api/ports'; resultId = 'ports';
+            break;
+        case 'subdomains':
+            data = { domain: document.getElementById('subdomains-domain').value.trim() };
+            if (!data.domain) return;
+            endpoint = '/api/subdomains'; resultId = 'subdomains';
+            break;
+        case 'tech':
+            data = { url: document.getElementById('tech-url').value.trim() };
+            if (!data.url) return;
+            endpoint = '/api/tech'; resultId = 'tech';
+            break;
+        case 'headers':
+            data = { url: document.getElementById('headers-url').value.trim() };
+            if (!data.url) return;
+            endpoint = '/api/headers'; resultId = 'headers';
+            break;
+        case 'geoip':
+            data = { target: document.getElementById('geoip-target').value.trim() };
+            if (!data.target) return;
+            endpoint = '/api/geoip'; resultId = 'geoip';
+            break;
+        case 'username':
+            data = { username: document.getElementById('username-input').value.trim() };
+            if (!data.username) return;
+            endpoint = '/api/username'; resultId = 'username';
+            break;
+        case 'wayback':
+            data = { url: document.getElementById('wayback-url').value.trim(), limit: parseInt(document.getElementById('wayback-limit').value) };
+            if (!data.url) return;
+            endpoint = '/api/wayback'; resultId = 'wayback';
+            break;
+    }
+
+    showLoading(resultId);
+    try {
+        const result = await apiPost(endpoint, data);
+        renderToolResult(tool, result);
+    } catch (err) {
+        document.getElementById(`${resultId}-results`).innerHTML =
+            `<div class="empty-state"><i class="fa-solid fa-triangle-exclamation" style="color:var(--rose);"></i><p style="color:var(--rose);">خطأ: ${escapeHtml(err.message)}</p></div>`;
+    } finally {
+        hideLoading(resultId);
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  FULL SCAN
+// ════════════════════════════════════════════════════════════════════
+
+async function runFullScan() {
+    const target = document.getElementById('fullscan-target').value.trim();
+    if (!target) return;
+
+    showLoading('fullscan');
+    try {
+        const result = await apiPost('/api/full-scan', { target });
+        const out = document.getElementById('fullscan-results');
+        let html = `<div style="margin-bottom:1rem;"><span class="badge badge-amber"><i class="fa-solid fa-bullseye"></i> ${escapeHtml(result.target)}</span></div>`;
+
+        const modules = ['dns', 'whois', 'ssl', 'tech', 'headers', 'geoip'];
+        const moduleLabels = { dns: 'DNS', whois: 'WHOIS', ssl: 'SSL/TLS', tech: 'Tech Detection', headers: 'HTTP Headers', geoip: 'GeoIP' };
+        const moduleIcons = { dns: 'fa-globe', whois: 'fa-clipboard-list', ssl: 'fa-lock', tech: 'fa-microchip', headers: 'fa-shield-halved', geoip: 'fa-earth-americas' };
+
+        modules.forEach(mod => {
+            const hasResult = result.results && result.results[mod];
+            const hasError = result.errors && result.errors[mod];
+            const statusClass = hasError ? 'error' : (hasResult ? 'success' : 'pending');
+            const statusIcon = hasError ? 'fa-xmark' : (hasResult ? 'fa-check' : 'fa-hourglass');
+            html += `<div class="scan-module-status ${statusClass}">
+                <i class="fa-solid ${moduleIcons[mod]}" style="color:var(--text-muted);width:20px;"></i>
+                <span class="module-name">${moduleLabels[mod]}</span>
+                <span class="status-icon"><i class="fa-solid ${statusIcon}"></i></span>
+            </div>`;
+        });
+
+        // Quick summary from results
+        if (result.results) {
+            html += `<div style="margin-top:1.2rem;">`;
+            if (result.results.ssl && result.results.ssl.grade) {
+                html += `<span class="badge badge-emerald" style="margin-left:6px;"><i class="fa-solid fa-shield-halved"></i> SSL: ${result.results.ssl.grade}</span>`;
+            }
+            if (result.results.geoip && result.results.geoip.country) {
+                html += `<span class="badge badge-cyan" style="margin-left:6px;"><i class="fa-solid fa-location-dot"></i> ${result.results.geoip.country}</span>`;
+            }
+            if (result.results.tech && result.results.tech.technologies) {
+                html += `<span class="badge badge-violet" style="margin-left:6px;"><i class="fa-solid fa-microchip"></i> ${result.results.tech.technologies.length} تقنية</span>`;
+            }
+            html += `</div>`;
+
+            html += `<details style="margin-top:1rem;"><summary style="cursor:pointer;color:var(--accent);font-size:0.85rem;font-weight:600;">عرض التفاصيل الكاملة (JSON)</summary>
+                <pre style="margin-top:0.5rem;padding:1rem;background:rgba(0,0,0,0.3);border-radius:var(--radius-sm);overflow-x:auto;font-size:0.75rem;color:var(--text-secondary);max-height:400px;">${escapeHtml(JSON.stringify(result, null, 2))}</pre>
+            </details>`;
+        }
+
+        out.innerHTML = html;
+    } catch (err) {
+        document.getElementById('fullscan-results').innerHTML =
+            `<div class="empty-state"><i class="fa-solid fa-triangle-exclamation" style="color:var(--rose);"></i><p style="color:var(--rose);">خطأ: ${escapeHtml(err.message)}</p></div>`;
+    } finally {
+        hideLoading('fullscan');
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  TOOL RESULT RENDERERS
+// ════════════════════════════════════════════════════════════════════
+
+function renderToolResult(tool, data) {
+    const outputId = `${tool}-results`;
+    const container = document.getElementById(outputId);
+    if (!container) return;
+
+    if (data.error) {
+        container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-triangle-exclamation" style="color:var(--rose);"></i><p style="color:var(--rose);">${escapeHtml(data.error)}</p></div>`;
+        return;
+    }
+
+    let html = '';
+
+    switch(tool) {
+        case 'dns':
+            html = renderDnsResult(data);
+            break;
+        case 'whois':
+            html = renderWhoisResult(data);
+            break;
+        case 'ssl':
+            html = renderSslResult(data);
+            break;
+        case 'ports':
+            html = renderPortsResult(data);
+            break;
+        case 'subdomains':
+            html = renderSubdomainsResult(data);
+            break;
+        case 'tech':
+            html = renderTechResult(data);
+            break;
+        case 'headers':
+            html = renderHeadersResult(data);
+            break;
+        case 'geoip':
+            html = renderGeoipResult(data);
+            break;
+        case 'username':
+            html = renderUsernameResult(data);
+            break;
+        case 'wayback':
+            html = renderWaybackResult(data);
+            break;
+        default:
+            html = `<pre style="font-size:0.8rem;color:var(--text-secondary);overflow-x:auto;">${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
+    }
+
+    container.innerHTML = html;
+}
+
+// ── DNS ──
+function renderDnsResult(data) {
+    let html = '';
+    const records = data.records || data;
+
+    // Email security badges
+    if (data.email_security) {
+        const es = data.email_security;
+        html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;">`;
+        html += `<span class="badge ${es.spf ? 'badge-emerald' : 'badge-rose'}"><i class="fa-solid ${es.spf ? 'fa-check' : 'fa-xmark'}"></i> SPF</span>`;
+        html += `<span class="badge ${es.dmarc ? 'badge-emerald' : 'badge-rose'}"><i class="fa-solid ${es.dmarc ? 'fa-check' : 'fa-xmark'}"></i> DMARC</span>`;
+        html += `<span class="badge ${es.dkim ? 'badge-emerald' : 'badge-rose'}"><i class="fa-solid ${es.dkim ? 'fa-check' : 'fa-xmark'}"></i> DKIM</span>`;
+        html += `</div>`;
+    }
+
+    // Records table
+    const recordTypes = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA'];
+    html += `<table class="results-table"><thead><tr><th>النوع</th><th>القيمة</th><th>TTL</th></tr></thead><tbody>`;
+
+    if (Array.isArray(records)) {
+        records.forEach(r => {
+            html += `<tr><td><span class="badge badge-cyan">${escapeHtml(r.type || '')}</span></td><td style="font-family:monospace;font-size:0.78rem;">${escapeHtml(r.value || r.data || JSON.stringify(r))}</td><td>${r.ttl || '-'}</td></tr>`;
+        });
+    } else if (typeof records === 'object') {
+        recordTypes.forEach(type => {
+            if (records[type]) {
+                const vals = Array.isArray(records[type]) ? records[type] : [records[type]];
+                vals.forEach(v => {
+                    const val = typeof v === 'object' ? JSON.stringify(v) : v;
+                    html += `<tr><td><span class="badge badge-cyan">${type}</span></td><td style="font-family:monospace;font-size:0.78rem;">${escapeHtml(val)}</td><td>-</td></tr>`;
+                });
+            }
+        });
+    }
+    html += `</tbody></table>`;
+
+    // Reverse DNS
+    if (data.reverse_dns && data.reverse_dns.length) {
+        html += `<div style="margin-top:1rem;"><span class="badge badge-violet"><i class="fa-solid fa-rotate-left"></i> Reverse DNS</span><div style="margin-top:8px;">`;
+        data.reverse_dns.forEach(r => { html += `<div style="font-size:0.82rem;padding:4px 0;color:var(--text-secondary);font-family:monospace;">${escapeHtml(typeof r === 'string' ? r : JSON.stringify(r))}</div>`; });
+        html += `</div></div>`;
+    }
+
+    return html;
+}
+
+// ── WHOIS ──
+function renderWhoisResult(data) {
+    const fields = [
+        ['domain_name', 'النطاق', 'fa-globe'],
+        ['registrar', 'المسجل', 'fa-building'],
+        ['registrant', 'المالك', 'fa-user'],
+        ['registrant_org', 'المنظمة', 'fa-building-columns'],
+        ['creation_date', 'تاريخ الإنشاء', 'fa-calendar-plus'],
+        ['expiration_date', 'تاريخ الانتهاء', 'fa-calendar-xmark'],
+        ['updated_date', 'آخر تحديث', 'fa-clock'],
+        ['status', 'الحالة', 'fa-circle-info'],
+        ['name_servers', 'خوادم الأسماء', 'fa-server'],
+        ['emails', 'البريد', 'fa-envelope'],
+        ['country', 'البلد', 'fa-flag'],
+    ];
+
+    let html = `<div class="kv-grid">`;
+    fields.forEach(([key, label, icon]) => {
+        let val = data[key];
+        if (!val && val !== 0) return;
+        if (Array.isArray(val)) val = val.join(', ');
+        if (typeof val === 'object') val = JSON.stringify(val);
+        html += `<div class="kv-item"><div class="kv-label"><i class="fa-solid ${icon}" style="margin-left:4px;"></i> ${label}</div><div class="kv-value">${escapeHtml(String(val))}</div></div>`;
+    });
+    html += `</div>`;
+
+    // Show raw if we didn't match known fields
+    if (Object.keys(data).length > 0 && html === `<div class="kv-grid"></div>`) {
+        html = `<div class="kv-grid">`;
+        Object.entries(data).forEach(([k, v]) => {
+            if (typeof v === 'object') v = JSON.stringify(v);
+            html += `<div class="kv-item"><div class="kv-label">${escapeHtml(k)}</div><div class="kv-value">${escapeHtml(String(v))}</div></div>`;
+        });
+        html += `</div>`;
+    }
+    return html;
+}
+
+// ── SSL ──
+function renderSslResult(data) {
+    let html = '';
+    const grade = data.grade || data.security_grade || '';
+    const gradeClass = grade.startsWith('A') ? 'grade-A' : grade.startsWith('B') ? 'grade-B' : grade.startsWith('C') ? 'grade-C' : grade.startsWith('D') ? 'grade-D' : 'grade-F';
+
+    html += `<div style="display:flex;align-items:center;gap:16px;margin-bottom:1rem;">`;
+    if (grade) html += `<div class="grade-badge ${gradeClass}">${escapeHtml(grade)}</div>`;
+    html += `<div><div style="font-weight:700;font-size:1.1rem;">${escapeHtml(data.subject || data.common_name || '')}</div>`;
+    html += `<div style="font-size:0.8rem;color:var(--text-muted);">${escapeHtml(data.issuer || '')}</div></div></div>`;
+
+    const sslFields = [
+        ['protocol', 'البروتوكول'], ['cipher', 'التشفير'], ['key_size', 'حجم المفتاح'],
+        ['valid_from', 'صالح من'], ['valid_until', 'صالح حتى'], ['days_remaining', 'الأيام المتبقية'],
+        ['serial_number', 'الرقم التسلسلي'], ['signature_algorithm', 'خوارزمية التوقيع'],
+    ];
+
+    html += `<div class="kv-grid">`;
+    sslFields.forEach(([key, label]) => {
+        let val = data[key];
+        if (!val && val !== 0) return;
+        html += `<div class="kv-item"><div class="kv-label">${label}</div><div class="kv-value">${escapeHtml(String(val))}</div></div>`;
+    });
+    html += `</div>`;
+
+    // SANs
+    if (data.san && data.san.length) {
+        html += `<div style="margin-top:1rem;"><span class="badge badge-cyan" style="margin-bottom:8px;display:inline-block;">Subject Alternative Names (${data.san.length})</span>`;
+        html += `<div style="display:flex;flex-wrap:wrap;gap:4px;">`;
+        data.san.forEach(s => { html += `<span class="badge badge-muted">${escapeHtml(s)}</span>`; });
+        html += `</div></div>`;
+    }
+
+    // Warnings
+    if (data.warnings && data.warnings.length) {
+        html += `<div style="margin-top:1rem;">`;
+        data.warnings.forEach(w => { html += `<div style="padding:8px;margin-bottom:4px;background:var(--rose-glow);border-radius:var(--radius-sm);font-size:0.82rem;color:var(--rose);"><i class="fa-solid fa-triangle-exclamation" style="margin-left:6px;"></i> ${escapeHtml(w)}</div>`; });
+        html += `</div>`;
+    }
+
+    return html;
+}
+
+// ── Ports ──
+function renderPortsResult(data) {
+    const ports = data.open_ports || data.ports || [];
+    let html = '';
+
+    if (data.scan_summary) {
+        html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;">
+            <span class="badge badge-amber"><i class="fa-solid fa-server"></i> ${escapeHtml(data.host || '')}</span>
+            <span class="badge badge-cyan">${ports.length} منافذ مفتوحة</span>
+        </div>`;
+    }
+
+    if (!ports.length) {
+        return html + `<div class="empty-state"><i class="fa-solid fa-shield-halved"></i><p>لم يتم العثور على منافذ مفتوحة</p></div>`;
+    }
+
+    html += `<table class="results-table"><thead><tr><th>المنفذ</th><th>الخدمة</th><th>Banner</th><th>المخاطر</th></tr></thead><tbody>`;
+    ports.forEach(p => {
+        const riskColor = (p.risk || '').toLowerCase() === 'high' ? 'badge-rose' :
+                          (p.risk || '').toLowerCase() === 'medium' ? 'badge-amber' : 'badge-emerald';
+        html += `<tr>
+            <td><span class="badge badge-cyan">${p.port || ''}</span></td>
+            <td>${escapeHtml(p.service || p.name || '-')}</td>
+            <td style="font-size:0.75rem;font-family:monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.banner || '-')}</td>
+            <td><span class="badge ${riskColor}">${escapeHtml(p.risk || 'info')}</span></td>
+        </tr>`;
+    });
+    html += `</tbody></table>`;
+    return html;
+}
+
+// ── Subdomains ──
+function renderSubdomainsResult(data) {
+    const subs = data.subdomains || data.results || [];
+    let html = `<div style="margin-bottom:1rem;"><span class="badge badge-cyan"><i class="fa-solid fa-sitemap"></i> ${subs.length} نطاق فرعي</span></div>`;
+
+    if (!subs.length) return html + `<div class="empty-state"><p>لم يتم العثور على نطاقات فرعية</p></div>`;
+
+    html += `<table class="results-table"><thead><tr><th>النطاق الفرعي</th><th>IP</th><th>المصدر</th></tr></thead><tbody>`;
+    subs.forEach(s => {
+        const sub = typeof s === 'string' ? s : (s.subdomain || s.name || '');
+        const ip = typeof s === 'object' ? (s.ip || s.address || '-') : '-';
+        const source = typeof s === 'object' ? (s.source || '-') : '-';
+        html += `<tr><td style="font-family:monospace;font-size:0.82rem;">${escapeHtml(sub)}</td><td style="font-family:monospace;">${escapeHtml(ip)}</td><td><span class="badge badge-muted">${escapeHtml(source)}</span></td></tr>`;
+    });
+    html += `</tbody></table>`;
+    return html;
+}
+
+// ── Tech ──
+function renderTechResult(data) {
+    const techs = data.technologies || data.detected || [];
+    let html = `<div style="margin-bottom:1rem;"><span class="badge badge-amber"><i class="fa-solid fa-microchip"></i> ${techs.length} تقنية مكتشفة</span></div>`;
+
+    if (!techs.length) return html + `<div class="empty-state"><p>لم يتم اكتشاف تقنيات</p></div>`;
+
+    // Group by category
+    const groups = {};
+    techs.forEach(t => {
+        const cat = (typeof t === 'object' ? (t.category || t.type || 'أخرى') : 'أخرى');
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(t);
+    });
+
+    Object.entries(groups).forEach(([cat, items]) => {
+        html += `<div style="margin-bottom:1rem;"><div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;">${escapeHtml(cat)}</div>`;
+        html += `<div class="data-grid">`;
+        items.forEach(t => {
+            const name = typeof t === 'string' ? t : (t.name || t.technology || JSON.stringify(t));
+            const version = typeof t === 'object' ? (t.version || '') : '';
+            const confidence = typeof t === 'object' ? (t.confidence || '') : '';
+            html += `<div class="data-grid-item">
+                <div class="item-header"><i class="fa-solid fa-cube" style="color:var(--accent);font-size:0.8rem;"></i><span class="item-title">${escapeHtml(name)}</span></div>
+                ${version ? `<div class="item-sub">الإصدار: ${escapeHtml(version)}</div>` : ''}
+                ${confidence ? `<div class="item-sub">الثقة: ${escapeHtml(String(confidence))}</div>` : ''}
+            </div>`;
+        });
+        html += `</div></div>`;
+    });
+    return html;
+}
+
+// ── Headers ──
+function renderHeadersResult(data) {
+    let html = '';
+    const score = data.score || data.security_score;
+    const grade = data.grade || '';
+
+    if (score !== undefined || grade) {
+        const gradeClass = grade.startsWith('A') ? 'grade-A' : grade.startsWith('B') ? 'grade-B' : grade.startsWith('C') ? 'grade-C' : grade.startsWith('D') ? 'grade-D' : 'grade-F';
+        html += `<div style="display:flex;align-items:center;gap:16px;margin-bottom:1rem;">`;
+        if (grade) html += `<div class="grade-badge ${gradeClass}">${escapeHtml(grade)}</div>`;
+        if (score !== undefined) html += `<div><span style="font-size:1.5rem;font-weight:800;color:var(--text-primary);">${score}</span><span style="color:var(--text-muted);font-size:0.85rem;">/100</span></div>`;
+        html += `</div>`;
+    }
+
+    // Present headers
+    if (data.headers && typeof data.headers === 'object') {
+        html += `<div style="margin-bottom:1rem;"><div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:8px;">HEADERS FOUND</div>`;
+        html += `<table class="results-table"><thead><tr><th>Header</th><th>القيمة</th></tr></thead><tbody>`;
+        Object.entries(data.headers).forEach(([k, v]) => {
+            html += `<tr><td style="font-family:monospace;font-weight:600;font-size:0.8rem;">${escapeHtml(k)}</td><td style="font-family:monospace;font-size:0.78rem;word-break:break-all;">${escapeHtml(String(v))}</td></tr>`;
+        });
+        html += `</tbody></table></div>`;
+    }
+
+    // Missing headers
+    if (data.missing_headers && data.missing_headers.length) {
+        html += `<div style="margin-bottom:1rem;"><div style="font-size:0.78rem;font-weight:600;color:var(--rose);margin-bottom:8px;">⚠ MISSING HEADERS</div>`;
+        data.missing_headers.forEach(h => {
+            const name = typeof h === 'string' ? h : (h.name || h.header || JSON.stringify(h));
+            html += `<div style="padding:6px 10px;margin-bottom:4px;background:var(--rose-glow);border-radius:var(--radius-sm);font-size:0.82rem;font-family:monospace;">${escapeHtml(name)}</div>`;
+        });
+        html += `</div>`;
+    }
+
+    // Recommendations
+    if (data.recommendations && data.recommendations.length) {
+        html += `<div><div style="font-size:0.78rem;font-weight:600;color:var(--emerald);margin-bottom:8px;">💡 RECOMMENDATIONS</div>`;
+        data.recommendations.forEach(r => {
+            const text = typeof r === 'string' ? r : (r.recommendation || r.text || JSON.stringify(r));
+            html += `<div style="padding:6px 10px;margin-bottom:4px;background:var(--emerald-glow);border-radius:var(--radius-sm);font-size:0.82rem;">${escapeHtml(text)}</div>`;
+        });
+        html += `</div>`;
+    }
+
+    // Fallback to JSON if nothing matched
+    if (!html) {
+        html = `<pre style="font-size:0.78rem;color:var(--text-secondary);">${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
+    }
+    return html;
+}
+
+// ── GeoIP ──
+function renderGeoipResult(data) {
+    let html = '';
+    const fields = [
+        ['ip', 'عنوان IP', 'fa-network-wired'],
+        ['country', 'البلد', 'fa-flag'],
+        ['region', 'المنطقة', 'fa-map'],
+        ['city', 'المدينة', 'fa-city'],
+        ['zip', 'الرمز البريدي', 'fa-envelope'],
+        ['lat', 'خط العرض', 'fa-location-crosshairs'],
+        ['lon', 'خط الطول', 'fa-location-crosshairs'],
+        ['timezone', 'المنطقة الزمنية', 'fa-clock'],
+        ['isp', 'مزود الخدمة', 'fa-building'],
+        ['org', 'المنظمة', 'fa-building-columns'],
+        ['as', 'AS', 'fa-server'],
+    ];
+
+    html += `<div class="kv-grid">`;
+    fields.forEach(([key, label, icon]) => {
+        let val = data[key];
+        if (!val && val !== 0) return;
+        html += `<div class="kv-item"><div class="kv-label"><i class="fa-solid ${icon}" style="margin-left:4px;"></i> ${label}</div><div class="kv-value">${escapeHtml(String(val))}</div></div>`;
+    });
+    html += `</div>`;
+
+    // Map link
+    if (data.lat && data.lon) {
+        html += `<div style="margin-top:1rem;text-align:center;">
+            <a href="https://www.google.com/maps?q=${data.lat},${data.lon}" target="_blank" rel="noopener" class="btn btn-secondary" style="text-decoration:none;">
+                <i class="fa-solid fa-map-location-dot"></i> عرض على الخريطة
+            </a>
+        </div>`;
+    }
+    return html;
+}
+
+// ── Username ──
+function renderUsernameResult(data) {
+    const results = data.results || data.platforms || data;
+    let html = '';
+
+    if (Array.isArray(results)) {
+        const found = results.filter(r => r.found || r.exists || r.status === 'found');
+        const notFound = results.filter(r => !r.found && !r.exists && r.status !== 'found');
+
+        html += `<div style="display:flex;gap:8px;margin-bottom:1rem;">
+            <span class="badge badge-emerald"><i class="fa-solid fa-check"></i> ${found.length} موجود</span>
+            <span class="badge badge-rose"><i class="fa-solid fa-xmark"></i> ${notFound.length} غير موجود</span>
+        </div>`;
+
+        html += `<div class="data-grid">`;
+        results.forEach(r => {
+            const name = r.platform || r.site || r.name || '';
+            const isFound = r.found || r.exists || r.status === 'found';
+            const url = r.url || r.profile_url || '#';
+            html += `<div class="data-grid-item ${isFound ? 'found' : 'not-found'}">
+                <div class="item-header">
+                    <i class="fa-solid ${isFound ? 'fa-circle-check' : 'fa-circle-xmark'}" style="color:${isFound ? 'var(--emerald)' : 'var(--text-muted)'};"></i>
+                    <span class="item-title">${escapeHtml(name)}</span>
+                </div>
+                ${isFound && url !== '#' ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="font-size:0.75rem;color:#60a5fa;">${escapeHtml(url)}</a>` : ''}
+            </div>`;
+        });
+        html += `</div>`;
+    } else {
+        html = `<pre style="font-size:0.78rem;color:var(--text-secondary);">${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
+    }
+    return html;
+}
+
+// ── Wayback ──
+function renderWaybackResult(data) {
+    const snapshots = data.snapshots || data.results || [];
+    let html = `<div style="margin-bottom:1rem;"><span class="badge badge-cyan"><i class="fa-solid fa-clock-rotate-left"></i> ${snapshots.length} لقطة</span></div>`;
+
+    if (!snapshots.length) return html + `<div class="empty-state"><p>لم يتم العثور على لقطات</p></div>`;
+
+    html += `<table class="results-table"><thead><tr><th>التاريخ</th><th>الرابط</th><th>الحالة</th></tr></thead><tbody>`;
+    snapshots.forEach(s => {
+        const date = s.timestamp || s.date || s.datetime || '';
+        const url = s.url || s.archive_url || '#';
+        const status = s.status || s.statuscode || '';
+
+        // Format timestamp
+        let formattedDate = date;
+        if (date.length === 14) {
+            formattedDate = `${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)} ${date.slice(8,10)}:${date.slice(10,12)}`;
+        }
+
+        html += `<tr>
+            <td style="white-space:nowrap;">${escapeHtml(formattedDate)}</td>
+            <td><a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="color:#60a5fa;font-size:0.78rem;word-break:break-all;">${escapeHtml(url.length > 60 ? url.substring(0,60) + '...' : url)}</a></td>
+            <td><span class="badge ${status == 200 ? 'badge-emerald' : 'badge-muted'}">${escapeHtml(String(status))}</span></td>
+        </tr>`;
+    });
+    html += `</tbody></table>`;
+    return html;
+}
+
 </script>
 </body>
 </html>
